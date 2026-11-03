@@ -69,6 +69,8 @@ export default function App() {
       return <ProfessionalSupport onNavigate={handleNavigate} />;
     case 'profile':
       return <Profile onNavigate={handleNavigate} />;
+    case 'vision_tracker':
+      return <Dashboard onNavigate={handleNavigate} />;
     default:
       return <Landing onNavigate={handleNavigate} />;
   }

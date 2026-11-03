@@ -136,9 +136,28 @@ export default function CheckIn({ onNavigate }) {
 
         {/* Step 1: Mood Selector */}
         <div className="aw-card">
-          <h3 style={{ fontSize: '1.15rem', marginBottom: '14px' }}>
-            Step 1: How are you feeling today?
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>
+              Step 1: How are you feeling today?
+            </h3>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                padding: '6px 14px',
+                borderRadius: '16px',
+                background: 'rgba(124, 124, 235, 0.08)',
+                borderColor: 'rgba(124, 124, 235, 0.25)',
+                color: 'var(--accent)',
+                cursor: 'pointer',
+              }}
+              onClick={() => onNavigate('dashboard')}
+            >
+              📷 Detect via Vision &amp; Voice on Dashboard →
+            </button>
+          </div>
 
           <div className="grid-7">
             {MOODS.map((m) => {

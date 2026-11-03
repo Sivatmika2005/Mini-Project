@@ -6,6 +6,7 @@ export const TRANSLATIONS = {
     app_title: "🌿 AI Wellness Companion",
     nav_dashboard: "🏠 Dashboard",
     nav_checkin: "📝 Daily Check-In",
+    nav_vision_tracker: "📷 Vision & Voice AI",
     nav_chat: "💬 AI Chat",
     nav_journal: "📔 Journal",
     nav_wellness_tips: "🌱 Wellness Tips",
