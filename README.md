@@ -38,14 +38,14 @@ start.bat
 
 3. **Run Application**:
    ```powershell
-   streamlit run app.py
+   python server.py
    ```
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend / UI**: Streamlit
+- **Frontend / UI**: React
 - **Backend & Logic**: Python 3.12
 - **ML & Analytics**: Scikit-Learn, Joblib, Pandas, NumPy, Matplotlib, Seaborn
 - **Database**: SQLite3
