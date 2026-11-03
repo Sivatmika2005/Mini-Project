@@ -1,0 +1,79 @@
+<svg width="420" height="460" viewBox="0 0 420 460" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#e6e6fd" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#b7f0d4" stop-opacity="0.3"/>
+    </radialGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e3e3fb"/>
+    </linearGradient>
+    <linearGradient id="headGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#eceafe"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c2a4a"/>
+      <stop offset="100%" stop-color="#4a4780"/>
+    </linearGradient>
+    <linearGradient id="armGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5a6f6"/>
+      <stop offset="100%" stop-color="#8586e8"/>
+    </linearGradient>
+    <linearGradient id="collarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5a6f6"/>
+      <stop offset="100%" stop-color="#8f90ef"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#7c7ceb" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- ambient glow -->
+  <circle cx="210" cy="230" r="190" fill="url(#glow)"/>
+
+  <g filter="url(#softShadow)">
+    <!-- antenna -->
+    <line x1="210" y1="58" x2="210" y2="30" stroke="#a5a6f6" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="210" cy="22" r="10" fill="#b7f0d4"/>
+
+    <!-- ears -->
+    <rect x="86" y="118" width="20" height="56" rx="10" fill="#a5a6f6"/>
+    <rect x="314" y="118" width="20" height="56" rx="10" fill="#a5a6f6"/>
+
+    <!-- head -->
+    <rect x="100" y="60" width="220" height="180" rx="54" fill="url(#headGrad)" stroke="#ffffff" stroke-width="2"/>
+
+    <!-- screen/face -->
+    <rect x="128" y="92" width="164" height="118" rx="34" fill="url(#screenGrad)"/>
+    <!-- eyes -->
+    <path d="M168 148 Q178 132 188 148" stroke="#bcd9fb" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M232 148 Q242 132 252 148" stroke="#bcd9fb" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- smile -->
+    <path d="M180 172 Q210 194 240 172" stroke="#b7f0d4" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+    <!-- neck -->
+    <rect x="188" y="238" width="44" height="20" rx="8" fill="#d7d7fb"/>
+
+    <!-- collar / shoulders -->
+    <path d="M120 262 Q210 236 300 262 L300 296 Q210 274 120 296 Z" fill="url(#collarGrad)"/>
+
+    <!-- body -->
+    <rect x="126" y="278" width="168" height="150" rx="46" fill="url(#bodyGrad)" stroke="#ffffff" stroke-width="2"/>
+
+    <!-- chest light -->
+    <circle cx="210" cy="352" r="18" fill="#b7f0d4"/>
+    <circle cx="210" cy="352" r="18" fill="none" stroke="#8ee8bd" stroke-width="3"/>
+
+    <!-- belt line -->
+    <rect x="126" y="392" width="168" height="10" fill="#e3e3fb"/>
+
+    <!-- left arm (waving) -->
+    <path d="M126 300 Q78 296 66 336 Q60 360 84 372" stroke="url(#armGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
+    <circle cx="84" cy="372" r="15" fill="#8586e8"/>
+
+    <!-- right arm -->
+    <path d="M294 302 Q338 312 340 356 Q341 382 320 398" stroke="url(#armGrad)" stroke-width="26" fill="none" stroke-linecap="round"/>
+    <circle cx="320" cy="398" r="15" fill="#8586e8"/>
+  </g>
+</svg>

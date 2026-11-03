@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & Node Dependencies
+.venv/
+venv/
+ENV/
+env/
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+
+# Database & local sqlite files
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+firebase-key.json
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,163 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../api/client';
+
+export const TRANSLATIONS = {
+  English: {
+    app_title: "🌿 AI Wellness Companion",
+    nav_dashboard: "🏠 Dashboard",
+    nav_checkin: "📝 Daily Check-In",
+    nav_chat: "💬 AI Chat",
+    nav_journal: "📔 Journal",
+    nav_wellness_tips: "🌱 Wellness Tips",
+    nav_insights: "🔎 Insights",
+    nav_resources: "☎️ Resources",
+    nav_professional_support: "🩺 Professional Support",
+    nav_profile: "⚙️ Profile & Settings",
+    nav_logout: "🚪 Log Out",
+    back_to_dashboard: "← Back to Dashboard",
+    profile_title: "My Profile & Settings ⚙️",
+    profile_subtitle: "Manage your account details, visual themes, and language preferences.",
+    edit_display_name: "✏️ Edit Display Name",
+    display_name_label: "Display Name",
+    save_display_name: "Save Display Name",
+    user_id_label: "User ID",
+    visual_theme_settings: "🎨 Visual Theme Settings",
+    theme_subtitle: "Choose your preferred aesthetic interface color palette.",
+    select_theme_label: "Select Application Theme",
+    language_preferences: "🌐 Language Preferences",
+    lang_subtitle: "Select your preferred language interface.",
+    select_lang_label: "Select Application Language",
+    dash_title: "Dashboard",
+    dash_quote: '"Rest is productive too."',
+    dash_todays_mood: "Today's Mood",
+    dash_wellness_score: "Wellness Score",
+    dash_stress_level: "Stress Level",
+    dash_checkin_streak: "Check-In Streak",
+    dash_journal_entries: "Journal Entries",
+    dash_quick_actions: "Quick Actions",
+    dash_start_checkin: "Start Check-In →",
+    dash_open_chat: "Open AI Chat →",
+    dash_write_journal: "Write Journal →",
+    dash_explore_insights: "Explore Insights →",
+    dash_recent_trend: "Recent Mood Trend",
+    dash_recent_history: "Recent History",
+    checkin_title: "Daily Check-In 📝",
+    checkin_subtitle: "Track how you feel today. Takes less than a minute.",
+    checkin_mood_prompt: "How are you feeling right now?",
+    checkin_stress_prompt: "Stress Level (1 = Completely Relaxed, 10 = Extremely Stressed)",
+    checkin_energy_prompt: "Energy Level (1 = Exhausted, 10 = High Energy)",
+    checkin_sleep_prompt: "Sleep Quality Last Night",
+    checkin_journal_prompt: "Daily Reflection / Notes (Optional)",
+    checkin_submit: "Submit Daily Check-In ✨",
+    chat_title: "AI Chat Companion 💬",
+    chat_subtitle: "Talk about anything on your mind in a safe, non-judgmental space.",
+    chat_new: "+ New Conversation",
+    chat_input_placeholder: "Type your message here...",
+    chat_send: "Send",
+    journal_title: "Personal Reflections Journal 📔",
+    journal_subtitle: "Write down your thoughts, feelings, and daily reflections.",
+    journal_new_entry: "✍️ New Journal Entry",
+    journal_title_input: "Entry Title",
+    journal_content_input: "Write your thoughts...",
+    journal_category: "Category",
+    journal_save: "Save Journal Entry 💾",
+    wellness_title: "Interactive Wellness Tips & Grounding 🌱",
+    wellness_subtitle: "Science-backed exercises to calm your mind and reduce anxiety.",
+    insights_title: "Well-being Insights 🔎",
+    insights_subtitle: "Personalized summaries of your wellness journey.",
+    resources_title: "Helplines & Resources ☎️",
+    resources_subtitle: "Immediate support and crisis hotlines.",
+  },
+  Tamil: {
+    app_title: "🌿 AI ஆரோக்கிய துணைவன்",
+    nav_dashboard: "🏠 முகப்பு",
+    nav_checkin: "📝 தினசரி பதிவேடு",
+    nav_chat: "💬 AI உரையாடல்",
+    nav_journal: "📔 குறிப்பேடு",
+    nav_wellness_tips: "🌱 ஆரோக்கிய குறிப்புகள்",
+    nav_insights: "🔎 விவரிப்புகள்",
+    nav_resources: "☎️ வளங்கள்",
+    nav_professional_support: "🩺 தொழில்முறை ஆதரவு",
+    nav_profile: "⚙️ சுயவிவரம் & அமைப்புகள்",
+    nav_logout: "🚪 வெளியேறு",
+    back_to_dashboard: "← முகப்பிற்கு திரும்பு",
+    profile_title: "என் சுயவிவரம் & அமைப்புகள் ⚙️",
+    profile_subtitle: "உங்கள் கணக்கு விவரங்கள், தீம்கள் மற்றும் மொழி அமைப்புகளை நிர்வகிக்கவும்.",
+    edit_display_name: "✏️ பெயரை திருத்துக",
+    display_name_label: "திரை பெயர்",
+    save_display_name: "பெயரை சேமிக்குக",
+    user_id_label: "பயனர் எண்",
+    visual_theme_settings: "🎨 வண்ண தீம் அமைப்புகள்",
+    theme_subtitle: "உங்களுக்கு விருப்பமான இடைமுக நிற தீமை தேர்வு செய்யவும்.",
+    select_theme_label: "பயன்பாட்டு தீமை தேர்ந்தெடுக்கவும்",
+    language_preferences: "🌐 மொழி அமைப்புகள்",
+    lang_subtitle: "உங்கள் விருப்ப மொழியை தேர்வு செய்யவும்.",
+    select_lang_label: "பயன்பாட்டு மொழியை தேர்ந்தெடுக்கவும்",
+    dash_title: "முகப்பு",
+    dash_quote: '"ஓய்வு எடுப்பதும் ஒரு முன்னேற்றமே."',
+    dash_todays_mood: "இன்றைய மனநிலை",
+    dash_wellness_score: "ஆரோக்கிய மதிப்பெண்",
+    dash_stress_level: "மன அழுத்த நிலை",
+    dash_checkin_streak: "தொடர் நாட்கள்",
+    dash_journal_entries: "குறிப்பேடு பதிவுகள்",
+    dash_quick_actions: "விரைவு செயல்கள்",
+    dash_start_checkin: "பதிவேடு தொடங்க →",
+    dash_open_chat: "AI உரையாடல் திற →",
+    dash_write_journal: "குறிப்பேடு எழுது →",
+    dash_explore_insights: "விவரிப்பு பார் →",
+    dash_recent_trend: "சமீபத்திய மனநிலை வரைபடம்",
+    dash_recent_history: "சமீபத்திய வரலாறு",
+    checkin_title: "தினசரி பதிவேடு 📝",
+    checkin_subtitle: "இன்று உங்கள் உணர்வுகளை பதிவு செய்யுங்கள். ஒரு நிமிடத்திற்கும் குறைவு.",
+    checkin_mood_prompt: "இப்போது உங்கள் உணர்வு எப்படி உள்ளது?",
+    checkin_stress_prompt: "மன அழுத்த நிலை (1 = அமைதி, 10 = கடும் மன அழுத்தம்)",
+    checkin_energy_prompt: "ஆற்றல் நிலை (1 = சோர்வு, 10 = மிகுந்த ஆற்றல்)",
+    checkin_sleep_prompt: "நேற்றைய தூக்கத்தின் தரம்",
+    checkin_journal_prompt: "இன்றைய நினைவுகள் / குறிப்புகள் (விருப்பத்தேர்வு)",
+    checkin_submit: "பதிவை சமர்ப்பிக்கவும் ✨",
+    chat_title: "AI உரையாடல் துணைவன் 💬",
+    chat_subtitle: "உங்கள் மனதில் உள்ளதை பாதுகாப்பான சூழலில் பகிர்ந்து கொள்ளுங்கள்.",
+    chat_new: "+ புதிய உரையாடல்",
+    chat_input_placeholder: "உங்கள் செய்தியை இங்கே தட்டச்சு செய்யவும்...",
+    chat_send: "அனுப்பு",
+    journal_title: "சொந்த குறிப்பேடு 📔",
+    journal_subtitle: "உங்கள் எண்ணங்கள் மற்றும் உணர்வுகளை எழுதி வையுங்கள்.",
+    journal_new_entry: "✍️ புதிய பதிவு",
+    journal_title_input: "தலைப்பு",
+    journal_content_input: "உங்கள் எண்ணங்களை எழுதுங்கள்...",
+    journal_category: "பிரிவு",
+    journal_save: "பதிவை சேமி 💾",
+    wellness_title: "ஆரோக்கிய குறிப்புகள் & பயிற்சிகள் 🌱",
+    wellness_subtitle: "மனதை அமைதிப்படுத்தும் அறிவியல் சார்ந்த பயிற்சிகள்.",
+    insights_title: "ஆரோக்கிய நுண்ணறிவு 🔎",
+    insights_subtitle: "உங்கள் மன ஆரோக்கிய பயணத்தின் தனிப்பயனாக்கப்பட்ட சுருக்கம்.",
+    resources_title: "உதவி எண்கள் & வளங்கள் ☎️",
+    resources_subtitle: "உடனடி அவசர உதவி மற்றும் வழிகாட்டுதல் எண்கள்.",
+  },
+};
+
+const LanguageContext = createContext(null);
+
+export function LanguageProvider({ children }) {
+  const [language, setLanguage] = useState(() => localStorage.getItem('app_language') || 'English');
+
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem('app_language', lang);
+  };
+
+  const t = (key) => {
+    const langDict = TRANSLATIONS[language] || TRANSLATIONS['English'];
+    return langDict[key] || TRANSLATIONS['English'][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: changeLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  return useContext(LanguageContext);
+}

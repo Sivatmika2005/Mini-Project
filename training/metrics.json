@@ -1,0 +1,27 @@
+{
+  "accuracy": 0.6237333333333334,
+  "weighted_precision": 0.6107362996276197,
+  "weighted_recall": 0.6237333333333334,
+  "weighted_f1": 0.6157537282534687,
+  "macro_precision": 0.6107362996276195,
+  "macro_recall": 0.6237333333333333,
+  "macro_f1": 0.6157537282534685,
+  "test_loss": 1.1235938466716164,
+  "train_loss_final": 1.2184590735456085,
+  "val_loss_final": 1.4118794101574323,
+  "train_samples": 17499,
+  "val_samples": 3751,
+  "test_samples": 3750,
+  "emotions": [
+    "Angry",
+    "Anxious",
+    "Excited",
+    "Fear",
+    "Happy",
+    "Lonely",
+    "Neutral",
+    "Overwhelmed",
+    "Sad",
+    "Stressed"
+  ]
+}
