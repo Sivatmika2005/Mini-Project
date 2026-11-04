@@ -105,8 +105,15 @@ def _call_gemini_api(user_message: str, history: List[Dict], system_prompt: str)
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured.")
 
-    configured_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
-    candidate_models = [configured_model, "gemini-flash-lite-latest", "gemini-flash-latest"]
+    configured_model = os.getenv("GEMINI_MODEL") or "gemini-flash-lite-latest"
+    candidate_models = [
+        configured_model,
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-pro-latest",
+    ]
     models_to_try = []
     for m in candidate_models:
         if m and m not in models_to_try:
@@ -301,40 +308,53 @@ def get_external_ai_chat_response(
     if background_notes:
         system_prompt += "\n\n[USER WELLNESS CONTEXT]\n" + "\n".join(background_notes)
 
-    # Detect configured external AI provider
-    provider = get_active_ai_provider()
+    # Always reload .env so updates to keys or models are immediately active
+    load_dotenv(override=True)
 
-    if not provider:
-        logger.warning("No External AI API Key configured in .env (GEMINI_API_KEY or OPENAI_API_KEY).")
+    # Build prioritized list of available external AI providers
+    available_providers = []
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+        available_providers.append("gemini")
+    if os.getenv("GROQ_API_KEY"):
+        available_providers.append("groq")
+    if os.getenv("OPENAI_API_KEY"):
+        available_providers.append("openai")
+    if os.getenv("ANTHROPIC_API_KEY"):
+        available_providers.append("anthropic")
+
+    if not available_providers:
+        logger.warning("No External AI API Key configured in .env.")
         return (
             "I hear you, and thank you for sharing that with me. "
             "Take a slow, deep breath in... and gently release it.\n\n"
-            "*(Note: To enable live responses from Google Gemini or OpenAI, please set `GEMINI_API_KEY` "
-            "or `OPENAI_API_KEY` in your project's `.env` file.)*"
+            "*(Note: To enable live responses from Google Gemini, Groq, or OpenAI, please set your API key in the `.env` file.)*"
         )
 
-    try:
-        if provider == "gemini":
-            return _call_gemini_api(clean_user_message, trimmed_history, system_prompt)
-        elif provider in ("openai", "groq"):
-            return _call_openai_compatible_api(clean_user_message, trimmed_history, system_prompt, provider=provider)
-        elif provider == "anthropic":
-            return _call_anthropic_api(clean_user_message, trimmed_history, system_prompt)
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="ignore")
-        logger.error(f"External AI API HTTP error ({provider}): {e.code} - {error_body}")
-        return (
-            f"I'm here with you. The external AI service encountered a temporary connection notice ({e.code}). "
-            "Take a mindful moment, and feel free to send your message again."
-        )
-    except Exception as e:
-        logger.error(f"External AI API request error ({provider}): {e}")
-        return (
-            "I'm listening and right here with you. I had a brief moment connecting to the external AI service. "
-            "How has the rest of your day been feeling?"
-        )
+    # Attempt providers in cascade order to ensure 100% resilience against transient 404/quota errors
+    last_error_summary = None
+    for prov in available_providers:
+        try:
+            if prov == "gemini":
+                return _call_gemini_api(clean_user_message, trimmed_history, system_prompt)
+            elif prov in ("openai", "groq"):
+                return _call_openai_compatible_api(clean_user_message, trimmed_history, system_prompt, provider=prov)
+            elif prov == "anthropic":
+                return _call_anthropic_api(clean_user_message, trimmed_history, system_prompt)
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="ignore")
+            logger.warning(f"External AI API HTTP error ({prov}): {e.code} - {error_body}")
+            last_error_summary = f"{e.code}"
+            continue
+        except Exception as e:
+            logger.warning(f"External AI API request error ({prov}): {e}")
+            last_error_summary = str(e)
+            continue
 
-    return "I'm right here with you. Take a slow, calm breath."
+    # Warm, empathetic fallback if all providers encounter temporary network/quota limits
+    return (
+        "I hear you, and I am right here with you. Take a slow, gentle breath in... and let it out smoothly. "
+        "Feel free to share more of what's on your mind—I am listening and here to support you."
+    )
 
 
 # ==============================================================================
@@ -357,22 +377,34 @@ def get_companion_response(
     if _contains_crisis_language(clean_msg):
         return CRISIS_RESPONSE
 
-    provider = get_active_ai_provider()
-    if provider:
+    load_dotenv(override=True)
+    available_providers = []
+    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+        available_providers.append("gemini")
+    if os.getenv("GROQ_API_KEY"):
+        available_providers.append("groq")
+    if os.getenv("OPENAI_API_KEY"):
+        available_providers.append("openai")
+    if os.getenv("ANTHROPIC_API_KEY"):
+        available_providers.append("anthropic")
+
+    if available_providers:
         companion_system = (
             "You are a friendly, encouraging AI Robot Wellness Companion displayed on the user's dashboard. "
             "Give very concise (1 to 3 sentences max), warm, conversational answers suitable for text-to-speech. "
             "Be positive, empathetic, and offer quick calming guidance."
         )
-        try:
-            if provider == "gemini":
-                return _call_gemini_api(clean_msg, [], companion_system)
-            elif provider in ("openai", "groq"):
-                return _call_openai_compatible_api(clean_msg, [], companion_system, provider=provider)
-            elif provider == "anthropic":
-                return _call_anthropic_api(clean_msg, [], companion_system)
-        except Exception as e:
-            logger.warning(f"Companion external API fallback: {e}")
+        for prov in available_providers:
+            try:
+                if prov == "gemini":
+                    return _call_gemini_api(clean_msg, [], companion_system)
+                elif prov in ("openai", "groq"):
+                    return _call_openai_compatible_api(clean_msg, [], companion_system, provider=prov)
+                elif prov == "anthropic":
+                    return _call_anthropic_api(clean_msg, [], companion_system)
+            except Exception as e:
+                logger.warning(f"Companion external API fallback ({prov}): {e}")
+                continue
 
     # Fallback response for dashboard robot companion
     lowered = clean_msg.lower()

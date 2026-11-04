@@ -21,7 +21,7 @@ from fastapi import FastAPI, HTTPException, Header, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from utils import auth, db, llm, translations, tts
+from utils import auth, db, llm, translations, tts, places
 from utils.emotion_classifier import predict_emotion
 
 # Initialize database
@@ -463,6 +463,71 @@ def companion_chat(req: CompanionChatRequest, current_user: dict = Depends(get_c
         "reply": ai_reply,
         "clean_speech_text": clean_speech_text,
     }
+
+
+# --- Professional Support & Healthcare Discovery ---
+
+@app.get("/api/professionals/metadata")
+def get_professionals_metadata():
+    from utils.professionals_data import SUPPORTED_CITIES_COORDINATES, CATEGORIES
+    tn_cities = [c for c, info in SUPPORTED_CITIES_COORDINATES.items() if info["state"] == "Tamil Nadu"]
+    other_cities = [c for c, info in SUPPORTED_CITIES_COORDINATES.items() if info["state"] != "Tamil Nadu"]
+    return {
+        "tamil_nadu_cities": tn_cities,
+        "other_india_cities": other_cities,
+        "all_cities": list(SUPPORTED_CITIES_COORDINATES.keys()),
+        "categories": CATEGORIES,
+    }
+
+
+@app.get("/api/professionals/nearby")
+def get_nearby_professionals(
+    lat: float,
+    lng: float,
+    radius: float = 25.0,
+    category: Optional[str] = None,
+    sort_by: str = "distance",
+):
+    try:
+        return places.get_nearby_professionals(
+            lat=lat,
+            lng=lng,
+            radius_km=radius,
+            category=category,
+            sort_by=sort_by,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Nearby discovery failed: {str(e)}")
+
+
+@app.get("/api/professionals/search")
+def search_professionals(
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+    district: Optional[str] = None,
+    pincode: Optional[str] = None,
+    query: Optional[str] = None,
+    category: Optional[str] = None,
+    sort_by: str = "distance",
+    max_distance: Optional[float] = None,
+    user_lat: Optional[float] = None,
+    user_lng: Optional[float] = None,
+):
+    try:
+        return places.search_professionals(
+            city=city,
+            state=state,
+            district=district,
+            pincode=pincode,
+            query=query,
+            category=category,
+            sort_by=sort_by,
+            max_distance=max_distance,
+            user_lat=user_lat,
+            user_lng=user_lng,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Professional search failed: {str(e)}")
 
 
 # --- Translations ---

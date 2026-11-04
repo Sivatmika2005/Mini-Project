@@ -76,4 +76,21 @@ export const api = {
 
   // Translations
   getTranslations: () => apiRequest('/translations'),
+
+  // Professional Discovery
+  getProfessionalsMetadata: () => apiRequest('/professionals/metadata'),
+  getNearbyProfessionals: (lat, lng, radius = 25, category = '', sortBy = 'distance') => {
+    const params = new URLSearchParams({ lat, lng, radius, sort_by: sortBy });
+    if (category && category !== 'All') params.append('category', category);
+    return apiRequest(`/professionals/nearby?${params.toString()}`);
+  },
+  searchProfessionals: (searchParams = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(searchParams).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '' && v !== 'All' && v !== 'All Cities') {
+        params.append(k, v);
+      }
+    });
+    return apiRequest(`/professionals/search?${params.toString()}`);
+  },
 };
