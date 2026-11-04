@@ -5,33 +5,33 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
 // ==============================================================================
-// 1. 24/7 CRISIS HELPLINES (LOCALIZED FOR TAMIL NADU & INDIA)
+// 1. 24/7 CRISIS HELPLINES (VERIFIED FOR TAMIL NADU & INDIA - ENGLISH ONLY)
 // ==============================================================================
 const HELPLINES = [
   {
     id: 'emergency-112',
     badge: 'National Emergency',
     badgeColor: '#ef4444',
-    title: '🚨 Emergency Services – India (அவசரக்கால உதவி)',
+    title: '🚨 Emergency Services – India',
     numbers: ['112'],
     primaryTel: '112',
     hours: '24/7 (Toll-Free, Always Active)',
     languages: 'Tamil, English, Hindi & Regional Languages',
-    desc: 'Unified national emergency helpline across India for immediate police, ambulance, medical rescue, fire, and crisis assistance.',
+    desc: 'Unified national emergency helpline across India for immediate police, ambulance, medical rescue, fire, and disaster assistance.',
     actionLabel: 'Call 112',
     actionTel: 'tel:112',
-    operator: 'Ministry of Home Affairs & Govt of Tamil Nadu',
+    operator: 'Ministry of Home Affairs & Government of Tamil Nadu',
   },
   {
     id: 'tele-manas-tn',
     badge: 'Tamil Nadu Mental Health',
     badgeColor: '#6366f1',
-    title: '🧠 Tele-MANAS – Tamil Nadu Cell (டெலி-மானாஸ்)',
+    title: '🧠 Tele-MANAS – Tamil Nadu Cell',
     numbers: ['14416', '1800-891-4416'],
     primaryTel: '14416',
-    hours: '24/7 (Free, Toll-Free)',
-    languages: 'Tamil (தமிழ்) & English',
-    desc: 'Government of India’s flagship mental health service with dedicated Tamil Nadu state center. Provides free, confidential crisis tele-counselling, psychological first aid, and psychiatric referral.',
+    hours: '24/7 (Free & Toll-Free)',
+    languages: 'Tamil & English',
+    desc: 'Government of India’s flagship mental health service with a dedicated Tamil Nadu state center. Provides free, confidential crisis tele-counselling, psychological first aid, and psychiatric referral.',
     actionLabel: 'Call 14416',
     actionTel: 'tel:14416',
     secondaryLabel: 'Call 1800-891-4416',
@@ -42,7 +42,7 @@ const HELPLINES = [
     id: 'sneha-chennai',
     badge: 'Suicide Prevention',
     badgeColor: '#f59e0b',
-    title: '💛 Sneha Suicide Prevention – Chennai (சினேகா மையம்)',
+    title: '💛 Sneha Suicide Prevention – Chennai',
     numbers: ['044-24640050', '044-24640060'],
     primaryTel: '04424640050',
     hours: '24/7 (Confidential & Compassionate)',
@@ -58,21 +58,21 @@ const HELPLINES = [
     id: 'tn-health-104',
     badge: 'State Health Helpline',
     badgeColor: '#10b981',
-    title: '📞 Tamil Nadu Health & Student Helpline (நல்வாழ்வு உதவி)',
+    title: '📞 Tamil Nadu Health & Student Helpline',
     numbers: ['104'],
     primaryTel: '104',
-    hours: '24/7 (Toll-Free across TN)',
+    hours: '24/7 (Toll-Free across Tamil Nadu)',
     languages: 'Tamil & English',
-    desc: 'Government of Tamil Nadu 24/7 official helpline for health guidance, tele-counselling, student exam stress management, and emotional distress support.',
+    desc: 'Government of Tamil Nadu 24/7 official helpline for healthcare guidance, tele-counselling, student exam stress management, and emotional distress support.',
     actionLabel: 'Call 104',
     actionTel: 'tel:104',
-    operator: 'Health & Family Welfare Dept, Govt of Tamil Nadu',
+    operator: 'Health & Family Welfare Department, Government of Tamil Nadu',
   },
   {
     id: 'nimhans-helpline',
     badge: 'Apex Psychiatry Centre',
     badgeColor: '#8b5cf6',
-    title: '🏥 NIMHANS Mental Health Support (நிம்ஹான்ஸ்)',
+    title: '🏥 NIMHANS Mental Health Support',
     numbers: ['080-46110007'],
     primaryTel: '08046110007',
     hours: '24/7 (Toll-Free Psychosocial Support)',
@@ -80,27 +80,27 @@ const HELPLINES = [
     desc: 'National Institute of Mental Health and Neuro Sciences premier helpline offering professional psychiatric consultations, psychotherapy advice, and crisis management.',
     actionLabel: 'Call 080-46110007',
     actionTel: 'tel:08046110007',
-    operator: 'NIMHANS, Institute of National Importance, Govt of India',
+    operator: 'NIMHANS, Institute of National Importance, Government of India',
   },
   {
     id: 'kiran-helpline',
     badge: 'National Helpline',
     badgeColor: '#0ea5e9',
-    title: '🌟 KIRAN Mental Health Helpline (கிரண் உதவி எண்)',
+    title: '🌟 KIRAN Mental Health Helpline',
     numbers: ['1800-599-0019'],
     primaryTel: '18005990019',
     hours: '24/7 (Toll-Free)',
-    languages: 'Tamil, English, Hindi and 10+ languages',
+    languages: 'Tamil, English, Hindi & 10+ Languages',
     desc: 'National mental health helpline by the Ministry of Social Justice & Empowerment providing early screening, psychological first aid, and crisis de-escalation.',
     actionLabel: 'Call 1800-599-0019',
     actionTel: 'tel:18005990019',
-    operator: 'Ministry of Social Justice and Empowerment, Govt of India',
+    operator: 'Ministry of Social Justice and Empowerment, Government of India',
   },
   {
     id: 'vandrevala-foundation',
     badge: 'Free Psychological Counselling',
     badgeColor: '#059669',
-    title: '🤝 Vandrevala Foundation (வாண்ட்ரேவாலா அறக்கட்டளை)',
+    title: '🤝 Vandrevala Foundation',
     numbers: ['+91 9999 666 555'],
     primaryTel: '+919999666555',
     hours: '24/7 (Counselling & WhatsApp Support)',
@@ -113,167 +113,155 @@ const HELPLINES = [
 ];
 
 // ==============================================================================
-// 2. ARTICLES & GUIDES (GENUINE INDIAN & TAMIL NADU SOURCES)
+// 2. ARTICLES & GUIDES (GENUINE INDIAN & TAMIL NADU SOURCES - ENGLISH ONLY)
 // ==============================================================================
 const ARTICLES = [
   {
     title: 'Understanding Stress Among College Students in India & Tamil Nadu',
-    tamilTitle: 'கல்லூரி மாணவர்களின் மன அழுத்தம் மற்றும் காரணங்கள்',
     source: 'NIMHANS Centre for Well-Being & WHO India',
     url: 'https://nimhans.ac.in/',
     body: 'College students across engineering, arts, and medical colleges in Tamil Nadu often encounter unique psychological pressures: demanding semester curricula, hostel adjustments away from family, intense placement competition, and high expectations. Research by NIMHANS indicates that prolonged unmanaged academic stress elevates anxiety and disrupts sleep architecture. Recognizing stress early through active emotional check-ins, balanced study routines, and campus counseling prevents burnout.',
   },
   {
-    title: 'Managing Academic Pressure & Exam Anxiety (பரீட்சை மன அழுத்தம் மேலாண்மை)',
-    tamilTitle: 'பரீட்சை மன அழுத்தம் மற்றும் பதற்ற மேலாண்மை',
+    title: 'Managing Academic Pressure & Exam Anxiety',
     source: 'National Health Mission Tamil Nadu (104 Helpline)',
     url: 'https://nhm.tn.gov.in/',
     body: 'Exam anxiety is a normal physiological reaction before University semester exams, NEET, GATE, or TNPSC. However, acute panic impairs working memory retrieval in the prefrontal cortex. To manage exam stress: practice the Pomodoro technique (25 minutes focus followed by a 5-minute break), avoid last-minute sleep deprivation, stay hydrated, and use box breathing before entering the exam hall. Students in Tamil Nadu can also call 104 for dedicated exam stress counselling.',
   },
   {
-    title: 'Depression Awareness & Early Warning Signs (மனச்சோர்வின் ஆரம்ப அறிகுறிகள்)',
-    tamilTitle: 'மனச்சோர்வின் ஆரம்ப அறிகுறிகள் மற்றும் விழிப்புணர்வு',
+    title: 'Depression Awareness & Early Warning Signs',
     source: 'Ministry of Health and Family Welfare (MoHFW), India',
     url: 'https://main.mohfw.gov.in/',
     body: 'Clinical depression is vastly different from temporary sadness. Key clinical warning signs include: persistent low mood exceeding two consecutive weeks, loss of interest in hobbies (anhedonia), insomnia or excessive sleeping, chronic fatigue, unexplained somatic pains, feelings of worthlessness, and social withdrawal. Acknowledging depression as a treatable health condition is the first crucial step toward recovery.',
   },
   {
     title: 'Mental Health Awareness & Overcoming Social Stigma in Tamil Nadu',
-    tamilTitle: 'தமிழ்நாட்டில் மனநல விழிப்புணர்வு & தயக்கங்களை உடைப்போம்',
     source: 'District Mental Health Programme (DMHP), Tamil Nadu',
     url: 'https://nhm.tn.gov.in/en/district-mental-health-programme',
     body: 'In many communities, societal hesitation and stigma prevent young adults from consulting psychologists or psychiatrists. Mental health is a normal component of overall human healthcare, just like cardiac or dental health. Tamil Nadu is pioneering district-level de-stigmatization through the District Mental Health Programme (DMHP). Seeking counseling is an act of courage, wisdom, and self-care.',
   },
   {
     title: 'How to Access Government Mental Health Services in Tamil Nadu',
-    tamilTitle: 'தமிழ்நாட்டில் அரசு மனநல மருத்துவ சேவைகளை அணுகும் முறை',
     source: 'Institute of Mental Health (IMH), Kilpauk, Chennai & NHM',
     url: 'https://nhm.tn.gov.in/',
-    body: 'Tamil Nadu offers comprehensive mental healthcare across all 38 districts through the District Mental Health Programme (DMHP). Patients can walk into psychiatry Outpatient Departments (OPD) at Government Medical College Hospitals (e.g. Madras Medical College, Kilpauk, Stanley, Madurai, Coimbatore, Tiruchirappalli) or District Headquarter Hospitals. The premier state institute is the historic Institute of Mental Health (IMH) in Kilpauk, Chennai. Consultations, psychotherapy, and essential medications are provided free of cost.',
+    body: 'Tamil Nadu offers comprehensive mental healthcare across all 38 districts through the District Mental Health Programme (DMHP). Patients can walk into psychiatry Outpatient Departments (OPD) at Government Medical College Hospitals (e.g., Madras Medical College, Kilpauk, Stanley, Madurai, Coimbatore, Tiruchirappalli) or District Headquarter Hospitals. The premier state institute is the historic Institute of Mental Health (IMH) in Kilpauk, Chennai. Consultations, psychotherapy, and essential medications are provided free of cost.',
   },
   {
-    title: 'When and How to Seek Professional Counselling (எப்போது மருத்துவரை அணுக வேண்டும்?)',
-    tamilTitle: 'எப்போது மனநல ஆலோசகரை அணுக வேண்டும்?',
+    title: 'When and How to Seek Professional Counselling',
     source: 'Tele-MANAS National Centre & NIMHANS',
     url: 'https://telemanas.mohfw.gov.in/',
     body: 'Consult a professional mental health counselor or clinical psychologist when: feelings of dread or sadness persist for more than 14 days, personal hygiene or college attendance slips, feelings of despair arise, or you rely on harmful coping mechanisms. You can initiate confidential support anytime by calling Tele-MANAS at 14416 from any phone.',
   },
   {
-    title: 'மனநலம் காக்கும் வழிமுறைகள் (Daily Mental Wellness in Tamil)',
-    tamilTitle: 'அன்றாட வாழ்வில் மன அமைதியைப் பேணும் எளிய நல்வழிகள்',
+    title: 'Daily Mental Wellness & Balanced Living',
     source: 'WHO India & National Health Mission Tamil Nadu',
     url: 'https://www.who.int/india/health-topics/mental-health',
-    body: 'அன்றாட வாழ்வில் மன அமைதியைப் பேண எளிய வழிமுறைகள்: தினமும் 7 முதல் 8 மணி நேர ஆழ்ந்த தூக்கம், காலை வேளையில் சூரிய ஒளி பெறுதல், சமச்சீரான உணவு முறை, மற்றும் படிப்பின் நடுவே சிறு ஓய்வுகள். சமூக ஊடகங்களில் அதிக நேரம் செலவழிப்பதைத் தவிர்த்து, குடும்பத்தினர் மற்றும் நல்ல நண்பர்களுடன் மனம் திறந்து பேசுவது மன அழுத்தத்தைக் குறைக்கும். மன உளைச்சல் ஏற்படும் போது 14416 (Tele-MANAS) என்ற எண்ணை இலவசமாகத் தொடர்பு கொள்ளலாம்.',
+    body: 'Daily habits to sustain peaceful mental wellness: prioritizing 7 to 8 hours of restorative sleep, getting morning sunlight, maintaining balanced hydration and nutrition, taking structured study breaks, and limiting social media doomscrolling. Opening up and speaking with trusted friends or family members significantly eases emotional pressure. For free professional guidance anytime, call Tele-MANAS at 14416.',
   },
 ];
 
 // ==============================================================================
-// 3. MINDFULNESS & BREATHING PRACTICES (BILINGUAL TAMIL & ENGLISH)
+// 3. MINDFULNESS & BREATHING PRACTICES (ENGLISH ONLY)
 // ==============================================================================
 const MINDFULNESS_GUIDES = [
   {
     id: 'box-breathing',
-    title: '4-4-4-4 Box Breathing (சதுர மூச்சுப் பயிற்சி)',
+    title: '4-4-4-4 Box Breathing Technique',
     category: 'Acute Anxiety & Exam Calmness',
     time: '3–5 Minutes',
-    englishDesc: 'Equal-ratio breathing resets the autonomic nervous system, lowers heart rate, and restores cognitive clarity under exam stress.',
-    tamilDesc: 'பரீட்சை பதற்றத்தைக் குறைத்து, இதயத் துடிப்பை சீராக்கி மனதை ஒருமுகப்படுத்தும் எளிய மூச்சுப் பயிற்சி.',
+    desc: 'Equal-ratio breathing resets the autonomic nervous system, lowers heart rate, and restores cognitive clarity under exam stress.',
     steps: [
-      { en: '1. Inhale slowly through your nose for 4 seconds.', ta: '1. மூக்கை வழியாக 4 வினாடிகள் சீராக மூச்சை உள்ளிழுக்கவும்.' },
-      { en: '2. Hold your breath gently for 4 seconds.', ta: '2. 4 வினாடிகள் மூச்சை நிறுத்தி வைக்கவும்.' },
-      { en: '3. Exhale smoothly through your mouth for 4 seconds.', ta: '3. வாய் வழியாக 4 வினாடிகள் மூச்சை மெதுவாக வெளியிடவும்.' },
-      { en: '4. Rest in quiet stillness for 4 seconds before the next cycle.', ta: '4. அடுத்த மூச்சுக்கு முன் 4 வினாடிகள் அமைதியாக இருக்கவும்.' },
+      '1. Inhale slowly and deeply through your nose for 4 seconds.',
+      '2. Hold your breath gently for 4 seconds without straining.',
+      '3. Exhale smoothly and completely through your mouth for 4 seconds.',
+      '4. Rest in quiet stillness for 4 seconds before beginning the next cycle.',
     ],
   },
   {
     id: 'grounding-54321',
-    title: '5-4-3-2-1 Sensory Grounding (ஐம்புலன் அமைதி பயிற்சி)',
+    title: '5-4-3-2-1 Sensory Grounding Technique',
     category: 'Panic Relief & Present Moment Anchor',
     time: '2–4 Minutes',
-    englishDesc: 'Pulls sensory focus away from catastrophic thoughts by anchoring awareness to physical objects in your immediate room.',
-    tamilDesc: 'மனம் அலைபாயும் போதும், தீவிர பயம் ஏற்படும் போதும் உடனே அமைதி தரும் ஐம்புலன் பயிற்சி.',
+    desc: 'Pulls sensory focus away from catastrophic thoughts by anchoring awareness to physical objects in your immediate room.',
     steps: [
-      { en: '👁️ 5 Things you can see: Look for small details in your room (desk, book, shadows).', ta: '👁️ 5 பார்க்கும் பொருட்கள்: உங்கள் அறையில் உள்ள மேசை, புத்தகம், வெளிச்சம் போன்ற 5 பொருட்களை கவனியுங்கள்.' },
-      { en: '🖐️ 4 Things you can physically feel: The chair supporting you, fabric of your clothes, solid floor.', ta: '🖐️ 4 தொடும் உணர்வுகள்: நீங்கள் அமர்ந்துள்ள நாற்காலி, உங்கள் ஆடை, கால்கள் தொடும் தரை.' },
-      { en: '👂 3 Things you can hear: The fan hum, breeze outside, distant vehicles.', ta: '👂 3 கேட்கும் ஒலிகள்: மின்விசிறியின் ஓசை, காற்றின் சத்தம், தூரத்து வாகன சத்தம்.' },
-      { en: '👃 2 Things you can smell: Hand wash, fresh air, notebook paper, scent of chai.', ta: '👃 2 நுகரும் வாசனைகள்: புதிய காற்று, காகித வாசனை அல்லது தேநீரின் நறுமணம்.' },
-      { en: '👅 1 Thing you can taste or positive truth: Sip of water, or say: "I am safe in this moment."', ta: '👅 1 சுவை அல்லது உறுதிமொழி: ஒரு மடக்கு தண்ணீர் அல்லது "நான் இப்போது பாதுகாப்பாக உள்ளேன்" என்ற உண்மை.' },
+      '👁️ 5 Things you can see: Look for subtle details in your room (desk surface, book spine, light reflection).',
+      '🖐️ 4 Things you can physically feel: The chair supporting you, fabric of your clothes, solid floor beneath your feet.',
+      '👂 3 Things you can hear: The fan hum, breeze outside, or distant traffic sounds.',
+      '👃 2 Things you can smell: Hand wash, fresh morning air, notebook paper, or the aroma of tea.',
+      '👅 1 Thing you can taste or positive truth: A sip of cool water, or repeating: "I am safe in this present moment."',
     ],
   },
   {
     id: 'exam-stress-relief',
-    title: 'Exam Stress Relief & Guided Somatic Relaxation (பரீட்சை பதற்ற தணிப்பு)',
+    title: 'Exam Stress Relief & Guided Somatic Relaxation',
     category: 'Student Study & Academic Anxiety',
     time: '3 Minutes',
-    englishDesc: 'Release micro-contractions in muscles before entering study halls or test centers.',
-    tamilDesc: 'தேர்வு அறைக்கு செல்லும் முன்பும், படிக்கும் போதும் ஏற்படும் உடல் இருக்கத்தைத் தளர்த்தும் பயிற்சி.',
+    desc: 'Release micro-contractions in muscles before entering study halls, laboratory tests, or examination centers.',
     steps: [
-      { en: '1. Unclench your jaw and drop your tongue from the roof of your mouth.', ta: '1. பற்களை கடிப்பதை நிறுத்தி, தாடையைத் தளர்த்தவும்.' },
-      { en: '2. Drop your shoulders 2 inches down and away from your ears.', ta: '2. தோள்பட்டைகளை 2 அங்குலம் கீழே இறக்கி தளர்த்தவும்.' },
-      { en: '3. Take 2 deep physiological sighs: double inhale through nose, long slow exhale through mouth.', ta: '3. இரண்டு முறை ஆழமாக மூச்சை உள்ளிழுத்து, மெதுவாக வாய் வழியாக பெருமூச்சு விட்டு வெளியிடவும்.' },
-      { en: '4. Remind yourself: "I have prepared, and I will take this one question at a time."', ta: '4. "நான் படித்திருக்கிறேன், ஒவ்வொரு கேள்வியாக நிதானமாக எதிர்கொள்வேன்" என்று நினைவுகூருங்கள்.' },
+      '1. Unclench your jaw and drop your tongue away from the roof of your mouth.',
+      '2. Drop your shoulders two inches down and away from your ears.',
+      '3. Take two deep physiological sighs: a double inhale through your nose, followed by a long, slow sighing exhale through your mouth.',
+      '4. Remind yourself: "I have prepared, and I will take this one question and one step at a time."',
     ],
   },
   {
     id: 'sleep-relaxation-nsdr',
-    title: 'Sleep Relaxation & Non-Sleep Deep Rest (NSDR / ஆழ்ந்த தூக்க தளர்வு)',
+    title: 'Sleep Relaxation & Non-Sleep Deep Rest (NSDR)',
     category: 'Bedtime Insomnia & Restorative Rest',
     time: '5–10 Minutes',
-    englishDesc: '4-7-8 relaxing breath stimulates the parasympathetic vagus nerve, calming racing thoughts before sleep.',
-    tamilDesc: 'தூக்கமின்மையைப் போக்கி, மனதை அமைதிப்படுத்தி ஆழ்ந்த தூக்கத்தைத் தரும் 4-7-8 மூச்சுப் பயிற்சி.',
+    desc: 'The 4-7-8 relaxing breath stimulates the parasympathetic vagus nerve, calming racing thoughts before sleep.',
     steps: [
-      { en: '1. Inhale quietly through your nose for 4 seconds.', ta: '1. மூக்கின் வழியாக 4 வினாடிகள் மூச்சை உள்ளிழுக்கவும்.' },
-      { en: '2. Hold your breath gently for 7 seconds.', ta: '2. 7 வினாடிகள் மூச்சை நிறுத்தி வைக்கவும்.' },
-      { en: '3. Exhale completely through your mouth with a soft whoosh for 8 seconds.', ta: '3. வாய் வழியாக 8 வினாடிகள் மூச்சை முழுமையாக வெளியிடவும்.' },
-      { en: '4. Repeat 4 cycles before turning off lamps for bedtime.', ta: '4. தூங்குவதற்கு முன் 4 முறை இதனைத் தொடரவும்.' },
+      '1. Inhale quietly through your nose for 4 seconds.',
+      '2. Hold your breath gently for 7 seconds.',
+      '3. Exhale completely through your mouth with a soft whoosh for 8 seconds.',
+      '4. Repeat for 4 full cycles before turning off lamps for bedtime rest.',
     ],
   },
   {
     id: 'daily-mindfulness',
-    title: 'Daily Mindfulness Practice (தினசரி கவன விழிப்புணர்வு)',
+    title: 'Daily Mindfulness Practice',
     category: 'Everyday Emotional Balance',
     time: '2–3 Minutes',
-    englishDesc: 'Micro-mindfulness during chai/coffee breaks or walking between college classes.',
-    tamilDesc: 'தேநீர் இடைவேளையின் போதும் அல்லது நடைப்பயிற்சியின் போதும் மனதை நிகழ்காலத்தில் நிலைநிறுத்தும் பயிற்சி.',
+    desc: 'Micro-mindfulness exercises during study intervals, coffee pauses, or walking across campus.',
     steps: [
-      { en: '1. Pause whatever you are doing for 60 seconds.', ta: '1. நீங்கள் செய்யும் வேலையை 60 வினாடிகள் நிறுத்துங்கள்.' },
-      { en: '2. Notice the warmth of your cup or the weight of your steps on the path.', ta: '2. உங்கள் கைகளில் உள்ள குவளையின் வெப்பம் அல்லது கால்களின் அடியை கவனியுங்கள்.' },
-      { en: '3. Acknowledge your current emotions without judging them as good or bad.', ta: '3. உங்கள் உணர்வுகளை நல்லது கெட்டது என்று தீர்ப்பிடாமல் அப்படியே உணருங்கள்.' },
-      { en: '4. Proceed with your day with kindness and patience toward yourself.', ta: '4. உங்களுக்கு நீங்களே கனிவுடன் அடுத்த செயலைத் தொடருங்கள்.' },
+      '1. Pause whatever you are doing for 60 seconds.',
+      '2. Notice the warmth of your cup or the firm weight of your footsteps on the path.',
+      '3. Acknowledge your current emotions without judging them as good or bad.',
+      '4. Proceed with your day with patience, kindness, and clear priorities.',
     ],
   },
 ];
 
 // ==============================================================================
-// 4. FREQUENTLY ASKED QUESTIONS (LOCALIZED FOR TAMIL NADU, INDIA)
+// 4. FREQUENTLY ASKED QUESTIONS (ENGLISH ONLY)
 // ==============================================================================
 const FAQS = [
   {
-    q: 'How can I contact a mental health counsellor in Tamil Nadu? (தமிழ்நாட்டில் ஒரு மனநல ஆலோசகரை எவ்வாறு தொடர்பு கொள்வது?)',
-    a: 'You can immediately speak with a trained mental health counselor 24/7 by calling 14416 (Tele-MANAS Tamil Nadu, toll-free) or dialing 104 (Tamil Nadu State Health Helpline). Both services provide free, confidential tele-counseling in Tamil and English. For in-person consultations, you can visit the psychiatry outpatient department (OPD) of your nearest Government District Headquarters Hospital, Government Medical College Hospital, or the Institute of Mental Health (IMH) in Kilpauk, Chennai.',
+    q: 'How can I contact a mental health counsellor in Tamil Nadu?',
+    a: 'You can immediately speak with a trained mental health counselor 24/7 by calling 14416 (Tele-MANAS Tamil Nadu, toll-free) or dialing 104 (Tamil Nadu State Health Helpline). Both services provide free, confidential tele-counseling. For in-person consultations, you can visit the psychiatry outpatient department (OPD) of your nearest Government District Headquarters Hospital, Government Medical College Hospital, or the Institute of Mental Health (IMH) in Kilpauk, Chennai.',
   },
   {
-    q: 'What is Tele-MANAS and how does it operate in Tamil Nadu? (டெலி-மானாஸ் என்றால் என்ன?)',
-    a: 'Tele-MANAS (Tele Mental Health Assistance and Networking Across States) is the Government of India’s 24/7 toll-free national tele-mental health programme, coordinated by NIMHANS. In Tamil Nadu, calls to 14416 or 1800-891-4416 connect directly to native Tamil and English-speaking clinical psychologists, psychiatrists, and trained counselors stationed in state cells, offering immediate psychological first aid and referral services.',
+    q: 'What is Tele-MANAS and how does it operate in Tamil Nadu?',
+    a: 'Tele-MANAS (Tele Mental Health Assistance and Networking Across States) is the Government of India’s 24/7 toll-free national tele-mental health programme, coordinated by NIMHANS. In Tamil Nadu, calls to 14416 or 1800-891-4416 connect directly to qualified clinical psychologists, psychiatrists, and trained counselors stationed in state cells, offering immediate psychological first aid and referral services.',
   },
   {
-    q: 'Is mental health counselling available for free in Tamil Nadu? (இலவச மனநல ஆலோசனை கிடைக்குமா?)',
+    q: 'Is mental health counselling available for free in Tamil Nadu?',
     a: 'Yes, 100% free. Tele-MANAS (14416), Tamil Nadu Health Helpline (104), and Sneha Suicide Prevention (044-24640050) do not charge any fees. Furthermore, outpatient consultations, psychological evaluations, and essential psychiatric medications are provided free of cost at all Tamil Nadu Government Medical College Hospitals and District Mental Health Programme (DMHP) clinics under the National Health Mission.',
   },
   {
-    q: 'How can college students get mental health support in Tamil Nadu? (கல்லூரி மாணவர்கள் எவ்வாறு மனநல ஆதரவை பெறலாம்?)',
+    q: 'How can college students get mental health support in Tamil Nadu?',
     a: 'College students experiencing exam anxiety, academic pressure, career uncertainty, or emotional distress can reach out to their institutional student guidance cell, dial 104 (which features dedicated student examination counseling protocols), or call Tele-MANAS (14416) anytime. Consultations are strictly confidential and do not impact academic records.',
   },
   {
-    q: 'What should I do if someone is experiencing an acute mental health crisis? (யாராவது அவசர மனநல நெருக்கடியில் இருந்தால் என்ன செய்ய வேண்டும்?)',
+    q: 'What should I do if someone is experiencing an acute mental health crisis?',
     a: 'Stay calm and never leave the person alone. Listen with empathy and without judgment or lecturing. Ensure their immediate environment is safe. Immediately dial 112 (Emergency Services across India) or 14416 (Tele-MANAS) or 044-24640050 (Sneha Chennai). If there is imminent danger of physical harm, safely escort them to the nearest Government Hospital casualty/emergency department.',
   },
   {
-    q: 'Where can I find government mental health services in Tamil Nadu? (தமிழ்நாட்டில் அரசு மனநல மருத்துவ சேவைகள் எங்கு கிடைக்கும்?)',
-    a: 'Government mental healthcare is active in all 38 districts of Tamil Nadu through the District Mental Health Programme (DMHP) operating in District Headquarter Hospitals and Primary Health Centres. The state’s apex institution is the Institute of Mental Health (IMH) located in Kilpauk, Chennai (established in 1794, one of Asia’s oldest psychiatric institutions). All Government Medical Colleges (Madras Medical College, Stanley, Kilpauk, Madurai, Coimbatore, Tiruchirappalli) have full-time psychiatry clinics.',
+    q: 'Where can I find government mental health services in Tamil Nadu?',
+    a: 'Government mental healthcare is active in all 38 districts of Tamil Nadu through the District Mental Health Programme (DMHP) operating in District Headquarter Hospitals and Primary Health Centres. The state’s apex institution is the Institute of Mental Health (IMH) located in Kilpauk, Chennai (established in 1794, one of Asia’s oldest psychiatric institutions). All Government Medical Colleges (e.g., Madras Medical College, Stanley, Kilpauk, Madurai, Coimbatore, Tiruchirappalli) have full-time psychiatry clinics.',
   },
   {
-    q: 'When should I seek professional help instead of managing on my own? (எப்போது நான் மனநல மருத்துவரை அணுக வேண்டும்?)',
+    q: 'When should I seek professional help instead of managing on my own?',
     a: 'You should seek professional support if feelings of deep sadness, anxiety, dread, or emotional numbness persist for more than 2 consecutive weeks, if your academic performance or college attendance drops sharply, if your sleep or appetite is severely disrupted, or if you feel overwhelmed by hopeless thoughts. Getting help early prevents minor distress from escalating into clinical depression.',
   },
 ];
@@ -314,7 +302,6 @@ export default function Resources({ onNavigate }) {
     (a) =>
       !query ||
       a.title.toLowerCase().includes(query) ||
-      (a.tamilTitle && a.tamilTitle.toLowerCase().includes(query)) ||
       a.body.toLowerCase().includes(query) ||
       a.source.toLowerCase().includes(query)
   );
@@ -324,8 +311,7 @@ export default function Resources({ onNavigate }) {
       !query ||
       m.title.toLowerCase().includes(query) ||
       m.category.toLowerCase().includes(query) ||
-      m.englishDesc.toLowerCase().includes(query) ||
-      m.tamilDesc.toLowerCase().includes(query)
+      m.desc.toLowerCase().includes(query)
   );
 
   const filteredFaqs = FAQS.filter(
@@ -359,7 +345,7 @@ export default function Resources({ onNavigate }) {
                 color: 'var(--accent)',
               }}
             >
-              📍 Tamil Nadu, India (தமிழ்நாடு, இந்தியா)
+              📍 Tamil Nadu, India
             </span>
             <span className="aw-muted" style={{ fontSize: '0.9rem' }}>
               • Verified Government &amp; Institutional Support
@@ -411,7 +397,7 @@ export default function Resources({ onNavigate }) {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="🔎 Search by topic, helpline number, college stress, exam anxiety, Tamil guidance (எ.கா. 14416, Sneha, தேர்வு பதற்றம்)..."
+          placeholder="🔎 Search by topic, helpline number, college stress, exam anxiety (e.g., 14416, Sneha, 104, depression)..."
           style={{ width: '100%', padding: '12px 18px', borderRadius: '12px', fontSize: '0.95rem' }}
         />
       </div>
@@ -567,14 +553,7 @@ export default function Resources({ onNavigate }) {
                   }}
                   onClick={() => toggleArticle(i)}
                 >
-                  <div>
-                    <span style={{ fontSize: '1.02rem', color: 'var(--ink)' }}>📖 {a.title}</span>
-                    {a.tamilTitle && (
-                      <div style={{ fontSize: '0.82rem', color: 'var(--muted)', fontWeight: 500, marginTop: '2px' }}>
-                        {a.tamilTitle}
-                      </div>
-                    )}
-                  </div>
+                  <span style={{ fontSize: '1.02rem', color: 'var(--ink)' }}>📖 {a.title}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--accent)', fontWeight: 600 }}>
                       {a.source}
@@ -624,7 +603,7 @@ export default function Resources({ onNavigate }) {
               Interactive Mindfulness &amp; Somatic Calmness Practices
             </h3>
             <p className="aw-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
-              Evidence-based respiratory and mindfulness techniques with Tamil and English guidance.
+              Evidence-based respiratory and mindfulness techniques for emotional regulation and academic focus.
             </p>
           </div>
 
@@ -651,22 +630,18 @@ export default function Resources({ onNavigate }) {
                   </div>
                 </div>
 
-                <div style={{ margin: '10px 0', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                  <div style={{ color: 'var(--ink)' }}>{m.englishDesc}</div>
-                  <div style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: '2px', fontStyle: 'italic' }}>
-                    {m.tamilDesc}
-                  </div>
+                <div style={{ margin: '10px 0', fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--ink)' }}>
+                  {m.desc}
                 </div>
 
                 <div style={{ background: 'rgba(124,124,235,0.04)', borderRadius: '12px', padding: '14px 16px', marginTop: '10px' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--ink)', marginBottom: '8px' }}>
-                    Step-by-Step Instructions (படிப்படியான வழிகாட்டுதல்):
+                    Step-by-Step Instructions:
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {m.steps.map((step, sIdx) => (
-                      <div key={sIdx} style={{ fontSize: '0.88rem', lineHeight: 1.5 }}>
-                        <div style={{ color: 'var(--ink)', fontWeight: 600 }}>{step.en}</div>
-                        <div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>{step.ta}</div>
+                      <div key={sIdx} style={{ fontSize: '0.88rem', lineHeight: 1.5, color: 'var(--ink)', fontWeight: 500 }}>
+                        {step}
                       </div>
                     ))}
                   </div>
