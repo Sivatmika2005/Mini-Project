@@ -48,10 +48,11 @@ CRISIS_RESPONSE = (
     "and please remember you do not have to navigate this alone.\n\n"
     "Because I am an AI wellness companion, I cannot provide emergency crisis care. "
     "Please connect right now with a compassionate, trained counselor who can support you 24/7:\n\n"
-    "• **India**: Call **9152987821** (KIRAN Mental Health Helpline) or **14416** (Tele-MANAS)\n"
-    "• **US / Canada**: Call or text **988** (Suicide & Crisis Lifeline)\n"
-    "• **UK**: Call **111** (NHS) or **116 123** (Samaritans)\n"
-    "• **International**: Visit [findahelpline.com](https://findahelpline.com/) for immediate local crisis support.\n\n"
+    "• **Tele-MANAS (Tamil Nadu & India)**: Call **14416** or **1800-891-4416** (24/7, Toll-Free, Tamil & English)\n"
+    "• **Sneha Suicide Prevention (Chennai)**: Call **044-24640050** or **044-24640060** (24/7)\n"
+    "• **Emergency Services (India)**: Call **112** (Police, Ambulance, Emergency)\n"
+    "• **Tamil Nadu State Health Helpline**: Call **104** (24/7 Medical & Student Exam Counselling)\n"
+    "• **NIMHANS Mental Health Helpline**: Call **080-46110007** (24/7 National Psychosocial Support)\n\n"
     "Please reach out to emergency services or someone you trust right now."
 )
 
