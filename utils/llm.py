@@ -64,6 +64,7 @@ def _contains_crisis_language(text: str) -> bool:
 
 def get_active_ai_provider() -> Optional[str]:
     """Identifies the configured external AI API provider based on environment variables."""
+    load_dotenv(override=True)
     if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
         return "gemini"
     elif os.getenv("OPENAI_API_KEY"):
@@ -98,13 +99,17 @@ def _get_sliding_context_window(history: List[Dict], max_turns: int = 10) -> Lis
 # EXTERNAL AI API: GOOGLE GEMINI
 # ==============================================================================
 def _call_gemini_api(user_message: str, history: List[Dict], system_prompt: str) -> str:
-    """Calls the official Google Gemini API (gemini-1.5-flash / gemini-2.0-flash / gemini-1.5-pro)."""
+    """Calls Google Gemini API with automatic model cascading to prevent 404/503 errors."""
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY is not configured.")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    configured_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+    candidate_models = [configured_model, "gemini-flash-lite-latest", "gemini-flash-latest"]
+    models_to_try = []
+    for m in candidate_models:
+        if m and m not in models_to_try:
+            models_to_try.append(m)
 
     headers = {"Content-Type": "application/json"}
 
@@ -129,20 +134,35 @@ def _call_gemini_api(user_message: str, history: List[Dict], system_prompt: str)
         },
     }
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
-        method="POST"
-    )
+    last_error = None
+    for model_name in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                candidates = res_data.get("candidates", [])
+                if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
+                    parts = candidates[0]["content"]["parts"]
+                    text_result = "".join(p.get("text", "") for p in parts).strip()
+                    if text_result:
+                        return text_result
+        except urllib.error.HTTPError as e:
+            last_error = e
+            logger.warning(f"Gemini model {model_name} returned {e.code}, attempting fallback model...")
+            continue
+        except Exception as e:
+            last_error = e
+            logger.warning(f"Gemini model {model_name} error: {e}")
+            continue
 
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        res_data = json.loads(resp.read().decode("utf-8"))
-        candidates = res_data.get("candidates", [])
-        if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
-            parts = candidates[0]["content"]["parts"]
-            return "".join(p.get("text", "") for p in parts).strip()
-
+    if last_error:
+        raise last_error
     raise RuntimeError("No text content returned from Gemini API.")
 
 
@@ -367,7 +387,12 @@ def get_companion_response(
 # ==============================================================================
 # CONVERSATION TITLE GENERATOR (FAST & LOCAL)
 # ==============================================================================
+# Backward-compatibility alias
+get_chat_response = get_external_ai_chat_response
+
+
 def generate_chat_title(user_message: str) -> str:
+
     """Generates a concise, meaningful conversation title from the first message."""
     clean_text = (user_message or "").strip()
     if not clean_text:
