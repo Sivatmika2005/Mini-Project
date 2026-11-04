@@ -376,8 +376,8 @@ def send_chat_message(conv_id: int, req: ChatMessageRequest, current_user: dict 
     # 4. Save user message
     db.add_conversation_message(conv_id, current_user["id"], "user", user_msg)
 
-    # 5. Call LLM
-    ai_reply = llm.get_chat_response(
+    # 5. Call External AI API
+    ai_reply = llm.get_external_ai_chat_response(
         user_message=user_msg,
         history=history_formatted,
         mood_context=mood_context,
@@ -417,10 +417,9 @@ def companion_chat(req: CompanionChatRequest, current_user: dict = Depends(get_c
     journals = db.get_journal_entries(current_user["id"])
     journal_sum = journals[0].get("title") or journals[0].get("content", "")[:60] if journals else ""
 
-    # 2. Call AI model independently (NOT saved to AI Chat conversation history)
-    ai_reply = llm.get_chat_response(
+    # 2. Call Dashboard Robot Companion independently
+    ai_reply = llm.get_companion_response(
         user_message=user_prompt,
-        history=[],
         mood_context=mood_context,
         stress_level=stress_lvl,
         journal_summary=journal_sum,

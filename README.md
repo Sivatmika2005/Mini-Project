@@ -22,7 +22,7 @@ An intelligent, full-stack mental wellness platform powered by **React**, **Fast
 2. **📝 Daily Check-In**:
    - Track mood, stress (1–10), energy (1–10), sleep quality, and daily notes with one-click syncing from Vision & Voice AI.
 3. **💬 AI Therapy Chat**:
-   - ChatGPT-style conversational companion with real-time emotion inference and audio read-aloud support.
+   - Conversational mental wellness support powered by **External AI API** (Google Gemini / OpenAI / Groq) with multi-turn conversation memory, emotional background awareness, and crisis safety protocol.
 4. **📔 Personal Journal**:
    - Secure personal reflections diary with categorized tagging and history tracking.
 5. **🌱 Guided Wellness Exercises**:
