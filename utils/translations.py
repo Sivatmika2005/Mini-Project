@@ -1,5 +1,4 @@
 """Translation dictionary and helper for multi-language UI support across the app."""
-import streamlit as st
 
 TRANSLATIONS = {
     "English": {
@@ -137,9 +136,9 @@ TRANSLATIONS = {
 }
 
 
-def t(key: str, lang: str = None) -> str:
-    """Retrieves translated string for given key based on session_state language."""
-    if lang is None:
-        lang = st.session_state.get("language", "English")
+def t(key: str, lang: str = "English") -> str:
+    """Retrieves translated string for given key based on language."""
+    if not lang:
+        lang = "English"
     lang_dict = TRANSLATIONS.get(lang, TRANSLATIONS["English"])
     return lang_dict.get(key, TRANSLATIONS["English"].get(key, key))
