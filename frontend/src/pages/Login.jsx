@@ -85,8 +85,12 @@ export default function Login({ onNavigate }) {
       setErrorMsg('Please enter a valid email address.');
       return;
     }
-    if (!regPassword || regPassword.length < 6) {
-      setErrorMsg('Password must be at least 6 characters.');
+    if (!regPassword || regPassword.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[A-Za-z]/.test(regPassword) || !/[0-9]/.test(regPassword)) {
+      setErrorMsg('Password must contain at least one letter and one number.');
       return;
     }
     if (regPassword !== regConfirmPassword) {
@@ -132,8 +136,12 @@ export default function Login({ onNavigate }) {
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!newPassword || newPassword.length < 6) {
-      setErrorMsg('Password must be at least 6 characters.');
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setErrorMsg('Password must contain at least one letter and one number.');
       return;
     }
     if (newPassword !== confirmNewPassword) {

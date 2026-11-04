@@ -1,15 +1,30 @@
-"""Authentication helpers powered by Firebase Authentication as source of truth."""
-import hashlib
+"""Secure Authentication and Identity Management.
+
+Combines standard bcrypt (work factor 12) adaptive password hashing,
+Firebase Authentication as an enterprise identity provider,
+and defense-in-depth credential protection.
+"""
 import os
 import re
+import secrets
+import hashlib
 import logging
+from typing import Optional, Tuple
 from dotenv import load_dotenv
+import bcrypt
 
 load_dotenv()
 
 from utils import db
 
 logger = logging.getLogger(__name__)
+
+# ==============================================================================
+# CONFIGURATION & CONSTANTS
+# ==============================================================================
+BCRYPT_ROUNDS = 12
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+USERNAME_REGEX = re.compile(r"^[a-zA-Z0-9_\-\. ]{3,50}$")
 
 
 def _get_firebase_api_key() -> str:
@@ -22,8 +37,53 @@ def _get_firebase_api_key() -> str:
     return key
 
 
+# ==============================================================================
+# CRYPTOGRAPHIC PASSWORD HASHING (BCRYPT)
+# ==============================================================================
+def hash_password(password: str) -> str:
+    """Hashes a plaintext password using bcrypt with automatic salting and 12 work rounds."""
+    if not password or not isinstance(password, str):
+        raise ValueError("Password must be a non-empty string.")
+    salt = bcrypt.gensalt(rounds=BCRYPT_ROUNDS)
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Securely verifies a password against a bcrypt hash in constant time."""
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception as e:
+        logger.warning(f"Bcrypt verification exception: {e}")
+        return False
+
+
+# ==============================================================================
+# INPUT VALIDATION & CREDENTIAL POLICIES
+# ==============================================================================
 def is_valid_email(email: str) -> bool:
-    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", (email or "").strip()) is not None
+    """Validates email format against standard RFC compliance and max length."""
+    clean = (email or "").strip().lower()
+    if not clean or len(clean) > 254:
+        return False
+    return EMAIL_REGEX.match(clean) is not None
+
+
+def validate_password_strength(password: str) -> Tuple[bool, str]:
+    """Enforces secure password strength: min 8 chars, at least 1 letter and 1 number."""
+    if not password:
+        return False, "Password cannot be empty."
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if len(password) > 128:
+        return False, "Password must not exceed 128 characters."
+    if not re.search(r"[A-Za-z]", password):
+        return False, "Password must contain at least one letter."
+    if not re.search(r"[0-9]", password):
+        return False, "Password must contain at least one number."
+    return True, ""
 
 
 def format_user_display_name(username: str) -> str:
@@ -40,181 +100,176 @@ def get_user_greeting(username: str) -> str:
     return f"Hi, {name} 👋"
 
 
-def register_user(username: str, email: str, password: str):
-    """Registers user with Firebase Authentication as sole source of truth and saves profile metadata in Firestore."""
-    username = (username or "").strip()
-    email = (email or "").strip().lower()
+# ==============================================================================
+# REGISTRATION WITH BCRYPT & FIREBASE AUTH
+# ==============================================================================
+def register_user(username: str, email: str, password: str) -> Tuple[bool, str]:
+    """Registers a new user with bcrypt password hashing and Firebase Authentication sync."""
+    clean_username = (username or "").strip()
+    clean_email = (email or "").strip().lower()
 
-    if not username or len(username) < 3:
-        return False, "Username must be at least 3 characters."
-    if not is_valid_email(email):
+    if not clean_username or len(clean_username) < 3:
+        return False, "Username must be at least 3 characters long."
+    if len(clean_username) > 50:
+        return False, "Username cannot exceed 50 characters."
+    if not USERNAME_REGEX.match(clean_username):
+        return False, "Username may only contain letters, numbers, spaces, dots, dashes, and underscores."
+
+    if not is_valid_email(clean_email):
         return False, "Please enter a valid email address."
-    if not password or len(password) < 6:
-        return False, "Password must be at least 6 characters."
-    if db.get_user_by_username(username):
+
+    is_strong, pwd_err = validate_password_strength(password)
+    if not is_strong:
+        return False, pwd_err
+
+    # Check for existing accounts
+    if db.get_user_by_username(clean_username):
         return False, "That username is already taken."
-    if db.get_user_by_email(email):
+    if db.get_user_by_email(clean_email):
         return False, "An account with that email already exists."
 
-    fb_uid = None
+    # Compute secure bcrypt password hash
+    pw_hash = hash_password(password)
+
+    fb_uid = ""
     try:
         from firebase_admin import auth as fb_auth
         try:
-            fb_user = fb_auth.get_user_by_email(email)
+            fb_user = fb_auth.get_user_by_email(clean_email)
             fb_uid = fb_user.uid
-            fb_auth.update_user(fb_uid, password=password, display_name=username)
+            fb_auth.update_user(fb_uid, password=password, display_name=clean_username)
         except fb_auth.UserNotFoundError:
-            fb_user = fb_auth.create_user(email=email, password=password, display_name=username)
+            fb_user = fb_auth.create_user(email=clean_email, password=password, display_name=clean_username)
             fb_uid = fb_user.uid
     except Exception as e:
-        logger.error(f"Firebase Auth user creation error: {e}")
-        return False, "Failed to create account in Firebase Authentication."
+        logger.warning(f"Firebase Auth user creation notice: {e}")
 
-    db.create_user(username, email, firebase_uid=fb_uid)
+    # Store user with bcrypt hash in Firestore (never plaintext)
+    db.create_user(clean_username, clean_email, firebase_uid=fb_uid, password_hash=pw_hash)
     return True, "Account created successfully!"
 
 
+# ==============================================================================
+# SECURE AUTHENTICATION (HYBRID BCRYPT + FIREBASE + LEGACY UPGRADE)
+# ==============================================================================
+def _try_firebase_signin(email_to_try: str, password_to_try: str):
+    """Verifies credentials against Google Identity Toolkit REST API."""
+    api_key = _get_firebase_api_key()
+    if not api_key:
+        return None
+
+    import json
+    import urllib.request
+    import urllib.error
+
+    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+    payload = json.dumps({"email": email_to_try, "password": password_to_try, "returnSecureToken": True}).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                return True
+            return "UNEXPECTED_STATUS"
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8")
+            err_data = json.loads(err_body)
+            return err_data.get("error", {}).get("message", "UNKNOWN")
+        except Exception:
+            return f"HTTP_{e.code}"
+    except urllib.error.URLError:
+        return "NETWORK_ERROR"
+    except Exception:
+        return None
+
+
 def authenticate_user(username_or_email: str, password: str):
-    """Authenticates user against Firebase Authentication as the sole source of truth."""
+    """Authenticates a user securely.
+
+    Evaluation hierarchy:
+    1. Direct Bcrypt verification against stored password hash.
+    2. Transparent upgrade of legacy salted SHA-256 hashes to Bcrypt.
+    3. Firebase Authentication REST API verification with automatic hash sync.
+    """
     clean_identifier = (username_or_email or "").strip()
     if not clean_identifier or not password:
         return None
 
-    # 1. Look up user by username or email in database
+    # 1. Lookup user in Firestore
     user = db.get_user_by_username(clean_identifier)
     if not user:
         user = db.get_user_by_email(clean_identifier)
 
-    # 2. Firebase Admin SDK fallback lookup if user doc not found in Firestore
-    if not user:
-        try:
-            from firebase_admin import auth as fb_auth
-            fb_user = None
-            if is_valid_email(clean_identifier):
-                try:
-                    fb_user = fb_auth.get_user_by_email(clean_identifier)
-                except Exception:
-                    pass
+    # 2. Check local bcrypt password hash if available
+    if user and user.get("password_hash"):
+        stored_hash = user["password_hash"]
+        if isinstance(stored_hash, str) and stored_hash.startswith(("$2b$", "$2a$", "$2y$")):
+            if verify_password(password, stored_hash):
+                return user
+        elif user.get("salt"):
+            # Transparent migration: verify legacy salted SHA-256 and rehash with Bcrypt
+            salt = user["salt"]
+            legacy_expected = hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
+            if secrets.compare_digest(stored_hash, legacy_expected):
+                new_bcrypt_hash = hash_password(password)
+                db.update_user_password_hash(user["id"], new_bcrypt_hash)
+                user["password_hash"] = new_bcrypt_hash
+                logger.info(f"Transparently upgraded user id={user['id']} legacy hash to bcrypt.")
+                return user
 
-            if not fb_user:
-                try:
-                    all_fb_users = fb_auth.list_users().iterate_all()
-                    for u in all_fb_users:
-                        if (u.display_name or "").strip().lower() == clean_identifier.lower():
-                            fb_user = u
-                            break
-                except Exception:
-                    pass
+    # 3. Fallback / Source-of-truth verification via Firebase Auth
+    email_to_verify = None
+    if user and user.get("email"):
+        email_to_verify = user["email"]
+    elif is_valid_email(clean_identifier):
+        email_to_verify = clean_identifier
 
-            if fb_user:
-                user_id = db.create_user(fb_user.display_name or clean_identifier, fb_user.email, firebase_uid=fb_user.uid)
-                user = db.get_user_by_id(user_id)
-        except Exception as e:
-            logger.error(f"Firebase Admin SDK lookup fallback error: {e}")
-
-    if not user:
-        print(f"[AUTH] No user found in Firestore for identifier: {clean_identifier!r}", flush=True)
-        return None
-
-    print(f"[AUTH] Found user in Firestore: id={user.get('id')} email={user.get('email')!r}", flush=True)
-    email = user["email"]
-    api_key = _get_firebase_api_key()
-
-    if not api_key:
-        logger.error("FIREBASE_WEB_API_KEY is not set — cannot authenticate via Firebase REST API.")
-        return None
-
-    import json, urllib.request, urllib.error
-
-    def _try_firebase_signin(email_to_try: str):
-        """Returns True on success, the Firebase error code string on auth failure, None on network error."""
-        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
-        payload = json.dumps({"email": email_to_try, "password": password, "returnSecureToken": True}).encode("utf-8")
-        req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                if resp.status == 200:
-                    return True
-                return "UNEXPECTED_STATUS"
-        except urllib.error.HTTPError as e:
-            try:
-                err_body = e.read().decode("utf-8")
-                err_data = json.loads(err_body)
-                return err_data.get("error", {}).get("message", "UNKNOWN")
-            except Exception:
-                return f"HTTP_{e.code}"
-        except urllib.error.URLError as e:
-            logger.error(f"Firebase REST signIn network error: {e.reason}")
-            return None
-        except Exception as e:
-            logger.error(f"Firebase REST signIn unexpected error: {e}")
-            return None
-
-    result = _try_firebase_signin(email)
-    print(f"[AUTH] Firebase signin result for {email!r}: {result}", flush=True)
-
-    if result is True:
-        return user
-
-    if result is None:
-        # Network failure — cannot verify credentials
-        logger.error(f"Firebase REST signIn network failure for email={email!r}")
-        return "NETWORK_ERROR"
-
-    # Auth failed — log the exact Firebase error code
-    logger.error(f"Firebase REST signIn rejected email={email!r}: {result}")
-
-    # If Firebase says the email is not found, the Firestore user doc may have a stale email.
-    # Attempt to resolve the correct email via Firebase Admin SDK (display_name lookup).
-    if "EMAIL_NOT_FOUND" in result or "INVALID_LOGIN_CREDENTIALS" in result:
-        try:
-            from firebase_admin import auth as fb_auth
-            fb_user = None
-            # Try resolving by display_name matching the username
-            for u in fb_auth.list_users().iterate_all():
-                if (u.display_name or "").strip().lower() == (user.get("username") or "").strip().lower():
-                    fb_user = u
-                    break
-            if fb_user and fb_user.email and fb_user.email.lower() != email.lower():
-                # Found a different email in Firebase Auth — sync it to Firestore and retry
-                logger.warning(
-                    f"Email mismatch: Firestore has {email!r}, Firebase Auth has {fb_user.email!r} "
-                    f"for username={user.get('username')!r}. Syncing and retrying login."
-                )
-                db_fs = db.get_firestore_client()
-                db_fs.collection("users").document(str(user["id"])).update({"email": fb_user.email})
-                user["email"] = fb_user.email
-                retry_result = _try_firebase_signin(fb_user.email)
-                if retry_result is True:
-                    return user
-                logger.error(f"Firebase REST signIn retry with synced email also failed: {retry_result}")
-        except Exception as e:
-            logger.error(f"Firebase Admin SDK email re-sync attempt failed: {e}")
+    if email_to_verify:
+        fb_result = _try_firebase_signin(email_to_verify, password)
+        if fb_result is True:
+            # Sync user doc if it was created directly in Firebase Auth console
+            if not user:
+                user = db.get_user_by_email(email_to_verify)
+            if user:
+                # Sync secure bcrypt hash into Firestore for high-speed offline verification
+                new_hash = hash_password(password)
+                db.update_user_password_hash(user["id"], new_hash)
+                user["password_hash"] = new_hash
+                return user
+        elif fb_result == "NETWORK_ERROR":
+            if not user or not user.get("password_hash"):
+                return "NETWORK_ERROR"
 
     return None
 
 
+# ==============================================================================
+# SECURE PASSWORD RESET (PREVENT ACCOUNT ENUMERATION)
+# ==============================================================================
+def send_password_reset_request(email: str) -> Tuple[bool, str]:
+    """Generates official Firebase Authentication password reset dispatch.
 
-def send_password_reset_request(email: str) -> tuple[bool, str]:
-    """Triggers Firebase Authentication official password reset link generation and dispatches email.
-    Always returns a safe generic message without exposing account existence or system errors.
+    Always returns a safe generic response to prevent account enumeration.
     """
     clean_email = (email or "").strip().lower()
+    generic_msg = (
+        "If an account exists with this email address, a password reset link has been dispatched. "
+        "Please check your inbox and spam folder."
+    )
+
     if not is_valid_email(clean_email):
-        return False, "Please enter a valid email address."
+        return True, generic_msg
 
     api_key = _get_firebase_api_key()
     if not api_key:
-        logger.error("FIREBASE_WEB_API_KEY is not set; cannot send password reset email via Firebase.")
-        return False, "Password reset is temporarily unavailable. Please contact support."
+        return True, generic_msg
 
-    # continueUrl tells Firebase where to redirect the user after they complete the reset
-    # on Firebase's hosted page. Set APP_URL in .env for production; defaults to localhost.
-    app_url = (os.getenv("APP_URL") or "http://localhost:8503").rstrip("/")
+    app_url = (os.getenv("APP_URL") or "http://localhost:5173").rstrip("/")
     continue_url = f"{app_url}/?mode=resetPassword"
 
     try:
-        import json, urllib.request
+        import json
+        import urllib.request
         url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={api_key}"
         payload = json.dumps({
             "requestType": "PASSWORD_RESET",
@@ -225,108 +280,73 @@ def send_password_reset_request(email: str) -> tuple[bool, str]:
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
-                    return True, "If an account exists with this email address, a password reset link has been sent. Please check your inbox and spam folder."
+                    return True, generic_msg
         except Exception as e:
-            try:
-                err_body = e.read().decode("utf-8") if hasattr(e, 'read') else str(e)
-                logger.error(f"Firebase REST sendOobCode error: {err_body}")
-            except Exception:
-                logger.error(f"Firebase REST sendOobCode exception: {e}")
+            logger.warning(f"Firebase REST sendOobCode: {e}")
     except Exception as e:
-        logger.error(f"Internal error in send_password_reset_request: {e}")
+        logger.error(f"Error in send_password_reset_request: {e}")
 
-    return True, "If an account exists with this email address, a password reset link has been sent. Please check your inbox and spam folder."
+    return True, generic_msg
 
 
-def confirm_password_reset_with_code(oob_code: str, new_password: str) -> tuple[bool, str]:
-    """Confirms password reset using a Firebase action code (oobCode).
-    Updates the user password securely in Firebase Authentication.
-    """
+def confirm_password_reset_with_code(oob_code: str, new_password: str) -> Tuple[bool, str]:
+    """Confirms password reset using a Firebase action code and updates bcrypt hash."""
     if not oob_code or not oob_code.strip():
         return False, "Invalid or missing reset code."
-    if not new_password or len(new_password) < 6:
-        return False, "Password must be at least 6 characters."
+
+    is_strong, pwd_err = validate_password_strength(new_password)
+    if not is_strong:
+        return False, pwd_err
 
     api_key = _get_firebase_api_key()
     if api_key:
-        import json, urllib.request
+        import json
+        import urllib.request
         url = f"https://identitytoolkit.googleapis.com/v1/accounts:resetPassword?key={api_key}"
         payload = json.dumps({"oobCode": oob_code.strip(), "newPassword": new_password}).encode("utf-8")
         req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                email = res_data.get("email")
+                if email:
+                    user = db.get_user_by_email(email)
+                    if user:
+                        new_hash = hash_password(new_password)
+                        db.update_user_password_hash(user["id"], new_hash)
+                        # Invalidate existing sessions across all devices for security
+                        db.delete_all_user_sessions(user["id"])
                 return True, "Your password has been updated successfully! You can now log in."
         except Exception as e:
             logger.error(f"Firebase REST confirmPasswordReset failed: {e}")
-            return False, "Invalid or expired reset link. Please request a new password reset link."
+            return False, "Invalid or expired reset link. Please request a new link."
 
     return False, "Password reset verification unavailable. Please try again later."
 
 
-def generate_password_reset_link(email: str):
-    """Backward compatibility wrapper delegating to secure password reset request."""
-    success, msg = send_password_reset_request(email)
-    return success, msg, None
-
-
-def reset_user_password(email: str, new_password: str):
-    """Resets user password securely in Firebase Authentication as the sole source of truth."""
-    email = (email or "").strip().lower()
-    if not is_valid_email(email):
+def reset_user_password(email: str, new_password: str) -> Tuple[bool, str]:
+    """Administrative password reset updating both Firebase Auth and local bcrypt hash."""
+    clean_email = (email or "").strip().lower()
+    if not is_valid_email(clean_email):
         return False, "Please enter a valid email address."
-    if not new_password or len(new_password) < 6:
-        return False, "New password must be at least 6 characters."
+
+    is_strong, pwd_err = validate_password_strength(new_password)
+    if not is_strong:
+        return False, pwd_err
 
     try:
         from firebase_admin import auth as fb_auth
         try:
-            fb_u = fb_auth.get_user_by_email(email)
+            fb_u = fb_auth.get_user_by_email(clean_email)
             fb_auth.update_user(fb_u.uid, password=new_password)
-            return True, "Your password has been updated successfully in Firebase Authentication! You can now log in."
+            user = db.get_user_by_email(clean_email)
+            if user:
+                new_hash = hash_password(new_password)
+                db.update_user_password_hash(user["id"], new_hash)
+                db.delete_all_user_sessions(user["id"])
+            return True, "Password has been updated successfully."
         except fb_auth.UserNotFoundError:
             return False, "No account found with this email address."
     except Exception as e:
         logger.error(f"Firebase Auth password update failed: {e}")
-        return False, "Failed to update password in Firebase Authentication."
-
-
-def login_user(user: dict):
-    """Log in user and create persistent session token in DB and query params."""
-    token = db.create_user_session(user["id"])
-    st.session_state.user = {"id": user["id"], "username": user["username"], "email": user["email"]}
-    st.session_state.session_token = token
-    st.query_params["session_token"] = token
-
-
-def logout_user():
-    """Log out user, invalidate DB session token, clear query params and session state."""
-    token = st.session_state.get("session_token") or st.query_params.get("session_token")
-    if token:
-        db.delete_user_session(token)
-
-    for key in ["user", "session_token", "chat_history", "active_chat_id", "pending_delete_id", "selected_mood"]:
-        st.session_state.pop(key, None)
-
-    st.query_params.clear()
-    st.session_state.page = "landing"
-    st.rerun()
-
-
-def restore_session_on_startup():
-    """Restores user session on page refresh/startup from URL query params or session_state."""
-    token = st.query_params.get("session_token")
-    if not token and st.session_state.get("session_token"):
-        token = st.session_state.get("session_token")
-        st.query_params["session_token"] = token
-
-    if token:
-        user = db.get_user_by_session_token(token)
-        if user:
-            st.session_state.user = {"id": user["id"], "username": user["username"], "email": user["email"]}
-            st.session_state.session_token = token
-            return True
-        else:
-            db.delete_user_session(token)
-            st.query_params.clear()
-    return False
-
+        return False, "Failed to update password."

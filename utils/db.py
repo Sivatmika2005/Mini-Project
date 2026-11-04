@@ -72,20 +72,48 @@ def _get_next_id(db_fs, counter_name: str) -> int:
 
 # ---------- User operations ----------
 
-def create_user(username, email, firebase_uid=""):
+def create_user(username, email, firebase_uid="", password_hash=""):
     db_fs = get_firestore_client()
     user_id = _get_next_id(db_fs, "users")
     now_str = _now()
     user_data = {
         "id": user_id,
-        "username": username,
-        "email": email,
+        "username": (username or "").strip(),
+        "email": (email or "").strip().lower(),
         "created_at": now_str,
     }
-    if firebase_uid:
+    # Sanitize firebase_uid to prevent accidental plaintext password leakage
+    if firebase_uid and not any(c in firebase_uid for c in "!@#$%^&*() ="):
         user_data["firebase_uid"] = firebase_uid
+    if password_hash:
+        user_data["password_hash"] = password_hash
     db_fs.collection("users").document(str(user_id)).set(user_data)
     return user_id
+
+
+def update_user_password_hash(user_id, password_hash):
+    """Updates password hash securely in Firestore and clears any legacy plain fields."""
+    if not user_id or not password_hash:
+        return False
+    db_fs = get_firestore_client()
+    doc_ref = db_fs.collection("users").document(str(user_id))
+    doc = doc_ref.get()
+    if not doc.exists:
+        return False
+    update_data = {
+        "password_hash": password_hash,
+        "password_updated_at": _now(),
+    }
+    # Remove legacy salt if it existed
+    user_dict = doc.to_dict() or {}
+    if "salt" in user_dict:
+        update_data["salt"] = firestore.DELETE_FIELD
+    # Also clean up legacy plaintext passwords if they were inadvertently saved in firebase_uid
+    fb_uid = str(user_dict.get("firebase_uid", ""))
+    if fb_uid and any(c in fb_uid for c in "!@#$%^&*() ="):
+        update_data["firebase_uid"] = ""
+    doc_ref.update(update_data)
+    return True
 
 
 
@@ -176,11 +204,16 @@ def get_user_by_id(user_id):
 
 # ---------- Session operations ----------
 
-def create_user_session(user_id, ttl_days=30):
+DEFAULT_SESSION_TTL_HOURS = int(os.getenv("SESSION_TTL_HOURS", "24"))
+
+
+def create_user_session(user_id, ttl_hours=None):
+    """Generates a cryptographically secure 256-bit session token with an enforceable expiration timestamp."""
     token = secrets.token_hex(32)
     now_dt = datetime.now()
+    hours = ttl_hours if ttl_hours is not None else DEFAULT_SESSION_TTL_HOURS
     created_at = now_dt.isoformat()
-    expires_at = (now_dt + timedelta(days=ttl_days)).isoformat()
+    expires_at = (now_dt + timedelta(hours=hours)).isoformat()
     db_fs = get_firestore_client()
     db_fs.collection("user_sessions").document(token).set(
         {
@@ -188,31 +221,62 @@ def create_user_session(user_id, ttl_days=30):
             "user_id": user_id,
             "created_at": created_at,
             "expires_at": expires_at,
+            "revoked": False,
         }
     )
     return token
 
 
 def get_user_by_session_token(token):
-    if not token:
+    """Validates session token: checks existence, revocation status, and expiration.
+    Automatically purges expired sessions from the database.
+    """
+    if not token or not isinstance(token, str) or len(token) < 32:
         return None
     db_fs = get_firestore_client()
     doc = db_fs.collection("user_sessions").document(token).get()
     if not doc.exists:
         return None
-    session_data = doc.to_dict()
+    session_data = doc.to_dict() or {}
+    if session_data.get("revoked", False):
+        return None
+
     now_str = _now()
-    if session_data.get("expires_at", "") > now_str:
+    expires_at = session_data.get("expires_at", "")
+    if expires_at and expires_at > now_str:
         user_id = session_data.get("user_id")
         return get_user_by_id(user_id)
-    return None
+    else:
+        # Expired session cleanup
+        try:
+            db_fs.collection("user_sessions").document(token).delete()
+        except Exception:
+            pass
+        return None
 
 
 def delete_user_session(token):
-    if not token:
+    """Permanently revokes and removes session token."""
+    if not token or not isinstance(token, str):
         return
     db_fs = get_firestore_client()
-    db_fs.collection("user_sessions").document(token).delete()
+    try:
+        db_fs.collection("user_sessions").document(token).delete()
+    except Exception:
+        pass
+
+
+def delete_all_user_sessions(user_id):
+    """Revokes all active sessions for a user across all devices."""
+    if not user_id:
+        return
+    db_fs = get_firestore_client()
+    try:
+        docs = db_fs.collection("user_sessions").where(filter=FieldFilter("user_id", "==", user_id)).get()
+        for d in docs:
+            d.reference.delete()
+    except Exception:
+        pass
 
 
 # ---------- Check-in operations ----------

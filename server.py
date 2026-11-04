@@ -116,16 +116,35 @@ class CompanionChatRequest(BaseModel):
 
 def get_current_user(authorization: Optional[str] = Header(None)):
     if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing. Please provide a valid Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token format")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization token format. Expected 'Bearer <token>'.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
-    token = parts[1]
+    token = parts[1].strip()
+    if not token or len(token) < 32:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Malformed or invalid session token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     user = db.get_user_by_session_token(token)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired or invalid")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired, invalid, or revoked. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 
@@ -140,12 +159,19 @@ def health_check():
 
 @app.post("/api/auth/register")
 def register(req: RegisterRequest):
-    success, msg = auth.register_user(req.username, req.email, req.password)
+    username = (req.username or "").strip()
+    email = (req.email or "").strip()
+    password = req.password or ""
+
+    if not username or not email or not password:
+        raise HTTPException(status_code=400, detail="Username, email, and password cannot be empty.")
+
+    success, msg = auth.register_user(username, email, password)
     if not success:
         raise HTTPException(status_code=400, detail=msg)
     
     # Auto-login after registration
-    user = auth.authenticate_user(req.email, req.password)
+    user = auth.authenticate_user(email, password)
     token = None
     if user and user != "NETWORK_ERROR":
         token = db.create_user_session(user["id"])
@@ -154,7 +180,13 @@ def register(req: RegisterRequest):
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
-    user = auth.authenticate_user(req.username_or_email, req.password)
+    identifier = (req.username_or_email or "").strip()
+    password = req.password or ""
+
+    if not identifier or not password:
+        raise HTTPException(status_code=400, detail="Username/email and password cannot be empty.")
+
+    user = auth.authenticate_user(identifier, password)
     if user == "NETWORK_ERROR":
         raise HTTPException(status_code=503, detail="Could not reach authentication server. Please try again.")
     if not user:
@@ -174,12 +206,12 @@ def login(req: LoginRequest):
 
 
 @app.post("/api/auth/logout")
-def logout(authorization: Optional[str] = Header(None)):
+def logout(current_user: dict = Depends(get_current_user), authorization: Optional[str] = Header(None)):
     if authorization:
         parts = authorization.split()
         if len(parts) == 2 and parts[0].lower() == "bearer":
-            db.delete_user_session(parts[1])
-    return {"success": True}
+            db.delete_user_session(parts[1].strip())
+    return {"success": True, "message": "Successfully logged out and session revoked."}
 
 
 @app.get("/api/auth/me")
