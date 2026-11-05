@@ -8,7 +8,7 @@ An intelligent, full-stack mental wellness platform powered by **React**, **Fast
 
 - **Frontend**: **React 18** + **Vite** (`frontend/`) running on `http://localhost:5173`
 - **Backend**: **FastAPI** + **Uvicorn** (`server.py`) running on `http://localhost:8001`
-- **Database & Auth**: **Firebase Authentication** + **Cloud Firestore**
+- **Database & Auth**: **Firebase Authentication** + **Cloud Firestore** / **SQLite3**
 - **Machine Learning**: Scikit-Learn Emotion Classifier, Web Audio API pitch autocorrelation, Computer Vision face landmark tracking, and MedGemma conversational engine.
 
 ---
@@ -57,6 +57,8 @@ pip install -r requirements.txt
 
 # Run backend API
 python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+# Or directly:
+python server.py
 ```
 
 #### 2. Start React Frontend
@@ -76,8 +78,9 @@ npm run dev
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React 18, Vite, Canvas-Confetti, Web Audio API, Web Speech API, CSS3 |
-| **Backend API** | Python 3.12, FastAPI, Uvicorn, Starlette, Pydantic |
-| **Auth & Cloud** | Firebase Admin SDK, Firebase Web Auth, Cloud Firestore |
+| **Frontend / UI** | React 18, Vite, Canvas-Confetti, Web Audio API, Web Speech API, CSS3 |
+| **Backend & Logic** | Python 3.12, FastAPI, Uvicorn, Starlette, Pydantic |
+| **Auth & Database** | Firebase Authentication, Cloud Firestore / SQLite3 |
 | **Machine Learning** | Scikit-Learn, Joblib, NumPy, Pandas, Matplotlib, Seaborn |
-| **Security** | Web Crypto API (AES-GCM-256), Salted hashing, CORS isolation |
+| **LLM Integration** | Support for Gemini, Groq, OpenAI, Anthropic & Local ML Emotion Fallback Engine |
+| **Security & Privacy** | Web Crypto API (AES-GCM-256), Salted hashing, CORS isolation |
