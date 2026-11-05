@@ -6,7 +6,6 @@ import { useLanguage } from '../context/LanguageContext';
 export default function Navbar({ onNavigate, currentPage }) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef(null);
 
@@ -110,17 +109,6 @@ export default function Navbar({ onNavigate, currentPage }) {
                     }}
                   >
                     🎨 {theme === 'Light' ? '🌙 Dark Theme' : '☀️ Light Theme'}
-                  </button>
-
-                  <button
-                    className="sidebar-btn"
-                    style={{ border: 'none', padding: '8px 12px', marginBottom: 2 }}
-                    onClick={() => {
-                      setPopoverOpen(false);
-                      onNavigate('profile');
-                    }}
-                  >
-                    🌐 Language ({language})
                   </button>
 
                   <hr style={{ margin: '6px 0', borderColor: 'rgba(124,124,235,0.15)' }} />

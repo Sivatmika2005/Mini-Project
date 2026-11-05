@@ -316,6 +316,15 @@ def get_latest_checkin(user_id):
 
 # ---------- Journal operations ----------
 
+def get_journal_entry(entry_id: int):
+    """Return a single journal entry dict or None."""
+    db_fs = get_firestore_client()
+    doc = db_fs.collection("journal_entries").document(str(entry_id)).get()
+    if doc.exists:
+        return doc.to_dict()
+    return None
+
+
 def add_journal_entry(user_id, title, content, mood="Calm", category="General"):
     db_fs = get_firestore_client()
     journal_id = _get_next_id(db_fs, "journal_entries")

@@ -8,7 +8,7 @@ import { api } from '../api/client';
 export default function Profile({ onNavigate }) {
   const { user, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [editName, setEditName] = useState(user ? user.username : '');
   const [successMsg, setSuccessMsg] = useState('');
@@ -40,14 +40,7 @@ export default function Profile({ onNavigate }) {
   const handleThemeChange = async (newTheme) => {
     setTheme(newTheme);
     try {
-      await api.saveSettings({ theme: newTheme, language });
-    } catch (e) {}
-  };
-
-  const handleLanguageChange = async (newLang) => {
-    setLanguage(newLang);
-    try {
-      await api.saveSettings({ theme, language: newLang });
+      await api.saveSettings({ theme: newTheme, language: 'English' });
     } catch (e) {}
   };
 
@@ -134,31 +127,13 @@ export default function Profile({ onNavigate }) {
                 {t('theme_subtitle')}
               </p>
 
-              <div className="form-group">
+              <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>{t('select_theme_label')}</label>
                 <select value={theme} onChange={(e) => handleThemeChange(e.target.value)}>
                   <option value="Light">Light ☀️</option>
                   <option value="Soft Pastel">Soft Pastel 🌸</option>
                   <option value="Ocean Breeze">Ocean Breeze 🌊</option>
                   <option value="Dark">Midnight Dark 🌙</option>
-                </select>
-              </div>
-
-              <hr style={{ margin: '24px 0', borderColor: 'rgba(124,124,235,0.15)' }} />
-
-              {/* Language Preferences Card */}
-              <div className="aw-section-title" style={{ fontSize: '1.15rem' }}>
-                {t('language_preferences')}
-              </div>
-              <p className="aw-muted" style={{ fontSize: '0.88rem', margin: '4px 0 16px 0' }}>
-                {t('lang_subtitle')}
-              </p>
-
-              <div className="form-group">
-                <label>{t('select_lang_label')}</label>
-                <select value={language} onChange={(e) => handleLanguageChange(e.target.value)}>
-                  <option value="English">English 🇺🇸</option>
-                  <option value="Tamil">தமிழ் (Tamil) 🇮🇳</option>
                 </select>
               </div>
             </div>

@@ -918,7 +918,7 @@ export default function Dashboard({ onNavigate }) {
                   fontSize: '1.05rem',
                   lineHeight: '1.6',
                   color: 'var(--ink)',
-                  marginBottom: '18px',
+                  marginBottom: '16px',
                   border: '1px solid rgba(124, 124, 235, 0.16)',
                   textAlign: 'center',
                 }}
@@ -953,7 +953,7 @@ export default function Dashboard({ onNavigate }) {
                   alignItems: 'center',
                   gap: '10px',
                   maxWidth: '520px',
-                  margin: '0 auto 16px auto',
+                  margin: '0 auto',
                   width: '100%',
                 }}
               >
@@ -1007,60 +1007,6 @@ export default function Dashboard({ onNavigate }) {
                   {(isListening || robotState === 'robot-speaking' || robotState === 'robot-thinking') ? '⏹️' : '🎙️'}
                 </button>
               </form>
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', maxWidth: '580px', margin: '0 auto' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (trackerSectionRef.current) {
-                      trackerSectionRef.current.scrollIntoView({ behavior: 'smooth' });
-                    }
-                    if (!hasStartedTracker) {
-                      startTracker();
-                    }
-                  }}
-                  style={{
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    borderRadius: '16px',
-                    padding: '6px 14px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    color: '#047857',
-                    cursor: 'pointer',
-                  }}
-                >
-                  📷 Launch Vision &amp; Voice AI
-                </button>
-
-                {[
-                  { label: "🧘 Breathing Exercise", prompt: "Can you guide me through a calming breathing exercise?" },
-                  { label: "⚡ Feeling Stressed", prompt: "I'm feeling really stressed today, can we talk?" },
-                  { label: "🌱 Grounding Technique", prompt: "Teach me a quick 5-4-3-2-1 grounding exercise." },
-                  { label: "✨ Had a Great Day", prompt: "I had a wonderful day today and wanted to share!" },
-                ].map((chip, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleCompanionSubmit(chip.prompt)}
-                    disabled={robotState === 'robot-thinking'}
-                    style={{
-                      background: 'rgba(124, 124, 235, 0.08)',
-                      border: '1px solid rgba(124, 124, 235, 0.2)',
-                      borderRadius: '16px',
-                      padding: '6px 14px',
-                      fontSize: '0.82rem',
-                      color: 'var(--ink)',
-                      cursor: robotState === 'robot-thinking' ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(124, 124, 235, 0.18)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(124, 124, 235, 0.08)')}
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>

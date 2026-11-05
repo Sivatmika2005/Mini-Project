@@ -1839,3 +1839,4 @@ CATEGORIES = [
     "Mental Health Clinics",
     "Psychiatric Hospitals",
 ]
+

@@ -104,64 +104,27 @@ const INITIAL_PSYCHIATRISTS = [
   },
 ];
 
-const TN_CITIES = [
-  'All Tamil Nadu',
-  'Chennai',
-  'Coimbatore',
-  'Salem',
-  'Madurai',
-  'Tiruchirappalli',
-  'Tirunelveli',
-  'Erode',
-  'Tiruppur',
-  'Vellore',
-  'Thanjavur',
-  'Hosur',
-  'Dindigul',
-  'Kanchipuram',
-  'Cuddalore',
-  'Nagercoil',
-  'Thoothukudi',
+const REGION_OPTIONS = [
+  'All India',
+  'Tamil Nadu',
+  'Other Major Cities',
 ];
 
-const OTHER_CITIES = [
-  'All Other Cities',
-  'Bengaluru',
-  'Hyderabad',
-  'Mumbai',
-  'Pune',
-  'Delhi-NCR',
-  'Kolkata',
-  'Ahmedabad',
-  'Jaipur',
-  'Kochi',
-  'Thiruvananthapuram',
-  'Mysuru',
-  'Mangaluru',
-  'Lucknow',
-  'Chandigarh',
-  'Indore',
-  'Bhopal',
-  'Visakhapatnam',
-  'Patna',
-  'Bhubaneswar',
-];
-
-const CATEGORIES = [
+const CATEGORY_OPTIONS = [
   'All Categories',
   'Psychiatrists',
   'Clinical Psychologists',
+  'Counselling Psychologists',
+  'Therapists',
+  'Mental Health Counsellors',
+  'Mental Health Clinics',
   'Psychiatric Hospitals',
-  'Child & Adolescent',
-  'Addiction Specialists',
 ];
 
-const DISTANCE_OPTIONS = [
-  { label: 'Within 5 km', value: 5 },
-  { label: 'Within 10 km', value: 10 },
-  { label: 'Within 25 km', value: 25 },
-  { label: 'Within 50 km', value: 50 },
-  { label: 'All Distances', value: 0 },
+const TN_CITY_NAMES = [
+  'chennai', 'coimbatore', 'salem', 'madurai', 'tiruchirappalli', 'trichy',
+  'tirunelveli', 'erode', 'tiruppur', 'vellore', 'thanjavur', 'hosur',
+  'dindigul', 'kanchipuram', 'cuddalore', 'nagercoil', 'thoothukudi', 'tuticorin'
 ];
 
 export default function ProfessionalSupport({ onNavigate }) {
@@ -170,8 +133,7 @@ export default function ProfessionalSupport({ onNavigate }) {
 
   const [doctors, setDoctors] = useState(INITIAL_PSYCHIATRISTS);
   const [loading, setLoading] = useState(false);
-  const [regionFilter, setRegionFilter] = useState('All'); // 'All', 'TN', 'Other'
-  const [selectedCity, setSelectedCity] = useState('All Cities');
+  const [regionFilter, setRegionFilter] = useState('All India');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [searchQuery, setSearchQuery] = useState('');
   const [latestCheckin, setLatestCheckin] = useState(null);
@@ -181,7 +143,6 @@ export default function ProfessionalSupport({ onNavigate }) {
   const [detectedAddress, setDetectedAddress] = useState(null); // e.g. "Chennai, Tamil Nadu"
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
-  const [distanceRadius, setDistanceRadius] = useState(25);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
 
   // Map reference
@@ -200,16 +161,12 @@ export default function ProfessionalSupport({ onNavigate }) {
   }, [user]);
 
   // Load all professionals from backend
-  const fetchProfessionals = async (cityParam = '', categoryParam = '', queryParam = '') => {
+  const fetchProfessionals = async () => {
     setLoading(true);
     try {
       const res = await api.searchProfessionals({
-        city: cityParam && cityParam !== 'All Cities' && !cityParam.startsWith('All') ? cityParam : undefined,
-        category: categoryParam && categoryParam !== 'All Categories' ? categoryParam : undefined,
-        query: queryParam || undefined,
         user_lat: userLocation ? userLocation.lat : undefined,
         user_lng: userLocation ? userLocation.lng : undefined,
-        max_distance: userLocation && distanceRadius > 0 ? distanceRadius : undefined,
       });
       if (res && res.professionals && res.professionals.length > 0) {
         setDoctors(res.professionals);
@@ -220,13 +177,6 @@ export default function ProfessionalSupport({ onNavigate }) {
       setLoading(false);
     }
   };
-
-  // Trigger search on filter changes when not in proximity-mode
-  useEffect(() => {
-    if (!userLocation) {
-      fetchProfessionals(selectedCity, selectedCategory, searchQuery);
-    }
-  }, [selectedCity, selectedCategory, regionFilter]);
 
   // Handle Geolocation "Find Professionals Near Me"
   const handleFindNearMe = () => {
@@ -248,7 +198,7 @@ export default function ProfessionalSupport({ onNavigate }) {
           const res = await api.getNearbyProfessionals(
             lat,
             lng,
-            distanceRadius > 0 ? distanceRadius : 50,
+            50,
             selectedCategory !== 'All Categories' ? selectedCategory : ''
           );
 
@@ -268,13 +218,13 @@ export default function ProfessionalSupport({ onNavigate }) {
       (err) => {
         setLocationLoading(false);
         if (err.code === 1) {
-          setLocationError('Location permission was denied. You can select your city manually below.');
+          setLocationError('Location permission was denied. You can search by city or hospital using the search bar above.');
         } else if (err.code === 2) {
-          setLocationError('Location information is currently unavailable. Please select your city manually.');
+          setLocationError('Location information is currently unavailable. Please use the search bar above.');
         } else if (err.code === 3) {
-          setLocationError('Location request timed out. Please select your city manually.');
+          setLocationError('Location request timed out. Please use the search bar above.');
         } else {
-          setLocationError('Unable to detect location. Please use manual city selection.');
+          setLocationError('Unable to detect location. Please use the search bar above.');
         }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -286,25 +236,122 @@ export default function ProfessionalSupport({ onNavigate }) {
     setUserLocation(null);
     setDetectedAddress(null);
     setLocationError(null);
-    setSelectedCity('All Cities');
-    fetchProfessionals('All Cities', selectedCategory, searchQuery);
+    fetchProfessionals();
   };
 
-  // Re-fetch nearby when radius or category changes while location is active
-  useEffect(() => {
-    if (userLocation) {
-      api.getNearbyProfessionals(
-        userLocation.lat,
-        userLocation.lng,
-        distanceRadius > 0 ? distanceRadius : 100,
-        selectedCategory !== 'All Categories' ? selectedCategory : ''
-      )
-        .then((res) => {
-          if (res && res.professionals) setDoctors(res.professionals);
-        })
-        .catch((err) => console.warn(err));
+  // Clear all filters
+  const handleClearFilters = () => {
+    setRegionFilter('All India');
+    setSelectedCategory('All Categories');
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters =
+    regionFilter !== 'All India' ||
+    selectedCategory !== 'All Categories' ||
+    searchQuery.trim() !== '';
+
+  const handleToggleView = (mode) => {
+    setViewMode(mode);
+    if (mode === 'map') {
+      setTimeout(() => {
+        mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 150);
     }
-  }, [distanceRadius, selectedCategory]);
+  };
+
+  const matchesRegion = (doc, region) => {
+    if (!region || region === 'All India') return true;
+    const state = (doc.state || '').toLowerCase().trim();
+    const isTN =
+      state.includes('tamil nadu') ||
+      state === 'tn' ||
+      TN_CITY_NAMES.some(
+        (c) => (doc.city || '').toLowerCase().includes(c) || (doc.address || '').toLowerCase().includes(c)
+      );
+    if (region === 'Tamil Nadu') {
+      return isTN;
+    }
+    if (region === 'Other Major Cities') {
+      return !isTN;
+    }
+    return true;
+  };
+
+  const matchesCategory = (doc, cat) => {
+    if (!cat || cat === 'All Categories') return true;
+    const sCat = cat.toLowerCase().trim();
+    const dCat = (doc.category || '').toLowerCase().trim();
+    if (dCat === sCat) return true;
+
+    const specs = Array.isArray(doc.specialization)
+      ? doc.specialization
+      : Array.isArray(doc.specialties)
+      ? doc.specialties
+      : [];
+
+    const blob = [
+      dCat,
+      (doc.designation || '').toLowerCase(),
+      (doc.title || '').toLowerCase(),
+      (doc.qualification || '').toLowerCase(),
+      (doc.hospital || '').toLowerCase(),
+      specs.join(' ').toLowerCase(),
+    ].join(' ');
+
+    if (sCat === 'psychiatrists') {
+      return blob.includes('psychiatri');
+    }
+    if (sCat === 'clinical psychologists') {
+      return blob.includes('clinical psycholog') || blob.includes('psychologist') || blob.includes('psychology');
+    }
+    if (sCat === 'counselling psychologists') {
+      return (blob.includes('counsel') && blob.includes('psycholog')) || blob.includes('counsel');
+    }
+    if (sCat === 'therapists') {
+      return blob.includes('therap');
+    }
+    if (sCat === 'mental health counsellors') {
+      return blob.includes('counsel');
+    }
+    if (sCat === 'mental health clinics') {
+      return blob.includes('clinic') || blob.includes('centre') || blob.includes('center') || dCat.includes('clinic');
+    }
+    if (sCat === 'psychiatric hospitals') {
+      return blob.includes('hospital') || blob.includes('institute') || dCat.includes('hospital');
+    }
+
+    return blob.includes(sCat);
+  };
+
+  const query = searchQuery.toLowerCase().trim();
+
+  // Filter client-side
+  const filteredDoctors = doctors.filter((doc) => {
+    // 1. Coverage Region
+    if (!matchesRegion(doc, regionFilter)) return false;
+
+    // 2. Professional Category
+    if (!matchesCategory(doc, selectedCategory)) return false;
+
+    // 3. Search query
+    if (!query) return true;
+    const nameMatch = (doc.name || '').toLowerCase().includes(query);
+    const hospMatch = (doc.hospital || '').toLowerCase().includes(query);
+    const cityMatch = (doc.city || '').toLowerCase().includes(query);
+    const stateMatch = (doc.state || '').toLowerCase().includes(query);
+    const districtMatch = (doc.district || '').toLowerCase().includes(query);
+    const addressMatch = (doc.address || '').toLowerCase().includes(query);
+    const pincodeMatch = (doc.pincode || '').toLowerCase().includes(query);
+    const qualMatch = (doc.qualification || '').toLowerCase().includes(query);
+    const specs = Array.isArray(doc.specialization)
+      ? doc.specialization
+      : Array.isArray(doc.specialties)
+      ? doc.specialties
+      : [];
+    const specMatch = specs.some((s) => s.toLowerCase().includes(query));
+    return nameMatch || hospMatch || cityMatch || stateMatch || districtMatch || addressMatch || pincodeMatch || qualMatch || specMatch;
+  });
 
   // Leaflet Interactive Map View Integration
   useEffect(() => {
@@ -333,8 +380,8 @@ export default function ProfessionalSupport({ onNavigate }) {
       if (!mapContainerRef.current || !window.L) return;
 
       // Determine center: user location or first doctor's location or Chennai
-      const centerLat = userLocation?.lat || doctors[0]?.latitude || doctors[0]?.lat || 13.0827;
-      const centerLng = userLocation?.lng || doctors[0]?.longitude || doctors[0]?.lng || 80.2707;
+      const centerLat = userLocation?.lat || filteredDoctors[0]?.latitude || filteredDoctors[0]?.lat || 13.0827;
+      const centerLng = userLocation?.lng || filteredDoctors[0]?.longitude || filteredDoctors[0]?.lng || 80.2707;
 
       if (!leafletMapRef.current) {
         leafletMapRef.current = window.L.map(mapContainerRef.current).setView([centerLat, centerLng], userLocation ? 12 : 7);
@@ -365,7 +412,7 @@ export default function ProfessionalSupport({ onNavigate }) {
       }
 
       // Add markers for professionals
-      doctors.forEach((doc) => {
+      filteredDoctors.forEach((doc) => {
         const lat = doc.latitude || doc.lat;
         const lng = doc.longitude || doc.lng;
         if (!lat || !lng) return;
@@ -400,25 +447,7 @@ export default function ProfessionalSupport({ onNavigate }) {
     };
 
     loadLeaflet();
-  }, [viewMode, doctors, userLocation]);
-
-  const query = searchQuery.toLowerCase().trim();
-
-  // Filter client-side
-  const filteredDoctors = doctors.filter((doc) => {
-    if (!query) return true;
-    const nameMatch = (doc.name || '').toLowerCase().includes(query);
-    const hospMatch = (doc.hospital || '').toLowerCase().includes(query);
-    const cityMatch = (doc.city || '').toLowerCase().includes(query);
-    const qualMatch = (doc.qualification || '').toLowerCase().includes(query);
-    const specs = Array.isArray(doc.specialization)
-      ? doc.specialization
-      : Array.isArray(doc.specialties)
-      ? doc.specialties
-      : [];
-    const specMatch = specs.some((s) => s.toLowerCase().includes(query));
-    return nameMatch || hospMatch || cityMatch || qualMatch || specMatch;
-  });
+  }, [viewMode, filteredDoctors, userLocation]);
 
   const stressScore = latestCheckin?.stress_level;
   const showStressNotice = stressScore && stressScore >= 6;
@@ -427,7 +456,7 @@ export default function ProfessionalSupport({ onNavigate }) {
     <main className={user ? 'main-content' : 'main-content no-sidebar'}>
       {!user && <Navbar onNavigate={onNavigate} currentPage="professional_support" />}
 
-      {/* Header */}
+      {/* 1. Professional Support heading and description */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
         <h2>Professional Support 🩺</h2>
         <button
@@ -437,600 +466,490 @@ export default function ProfessionalSupport({ onNavigate }) {
           {user ? '← Back to Dashboard' : '← Back to Home'}
         </button>
       </div>
-      <p className="aw-muted">
+      <p className="aw-muted" style={{ marginBottom: '18px' }}>
         Connect with verified psychiatrists, clinical psychologists, and mental healthcare establishments across Tamil Nadu and major cities in India.
       </p>
 
-      {/* 🚨 Immediate Emergency Helpline Notice (India) */}
-      <div
-        className="aw-card"
-        style={{
-          borderLeft: '5px solid #ff6b8b',
-          background: '#fff5f6',
-          margin: '18px 0',
-          padding: '16px',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <b style={{ color: '#d63031', fontSize: '1.05rem' }}>🚨 Immediate Crisis &amp; Emergency Notice:</b>
-            <div style={{ marginTop: '6px', fontSize: '0.92rem', lineHeight: '1.6', color: 'var(--ink)' }}>
-              If you or someone you know is in severe distress or experiencing thoughts of self-harm, please do not wait for a routine appointment. Reach out immediately to verified 24/7 helplines:
-            </div>
-            <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              <a
-                href="tel:14416"
-                className="btn-primary"
-                style={{ padding: '6px 14px', fontSize: '0.85rem', background: '#d63031', borderColor: '#d63031', textDecoration: 'none' }}
-              >
-                📞 Tele-MANAS: 14416 (24/7 Toll-Free)
-              </a>
-              <a
-                href="tel:04424640050"
-                className="btn-secondary"
-                style={{ padding: '6px 14px', fontSize: '0.85rem', textDecoration: 'none' }}
-              >
-                📞 Sneha Chennai: 044-24640050
-              </a>
-              <a
-                href="tel:104"
-                className="btn-secondary"
-                style={{ padding: '6px 14px', fontSize: '0.85rem', textDecoration: 'none' }}
-              >
-                📞 TN Health Helpline: 104
-              </a>
-              <a
-                href="tel:18005990019"
-                className="btn-secondary"
-                style={{ padding: '6px 14px', fontSize: '0.85rem', textDecoration: 'none' }}
-              >
-                📞 KIRAN: 1800-599-0019
-              </a>
-            </div>
+      {/* 2. Search bar and Find Professionals Near Me button */}
+      <div className="aw-card" style={{ marginBottom: '16px', padding: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 300px' }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔎 Search by psychiatrist, hospital, city, or specialization (e.g. Depression, CBT, NIMHANS)..."
+              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--line)', outline: 'none' }}
+            />
+          </div>
+
+          {/* Native Browser Geolocation Button */}
+          <button
+            className="btn-primary"
+            onClick={handleFindNearMe}
+            disabled={locationLoading}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              fontSize: '0.88rem',
+              whiteSpace: 'nowrap',
+            }}
+            title="Detect your current location to find nearby mental health professionals"
+          >
+            {locationLoading ? '⏳ Detecting Location...' : '📍 Find Professionals Near Me'}
+          </button>
+
+          {/* View Mode Toggle */}
+          <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+            <button
+              type="button"
+              onClick={() => handleToggleView('list')}
+              style={{
+                padding: '8px 14px',
+                fontSize: '0.85rem',
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'list' ? 'var(--accent, #7c7ceb)' : 'var(--card-bg, #ffffff)',
+                color: viewMode === 'list' ? '#ffffff' : 'var(--ink)',
+                fontWeight: 600,
+              }}
+            >
+              📋 Card View
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleView('map')}
+              style={{
+                padding: '8px 14px',
+                fontSize: '0.85rem',
+                border: 'none',
+                cursor: 'pointer',
+                background: viewMode === 'map' ? 'var(--accent, #7c7ceb)' : 'var(--card-bg, #ffffff)',
+                color: viewMode === 'map' ? '#ffffff' : 'var(--ink)',
+                fontWeight: 600,
+              }}
+            >
+              🗺️ Map View
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Stress Score Notice */}
-      {showStressNotice && (
+      {/* 3. Location status or error message when applicable */}
+      {detectedAddress && (
         <div
-          className="aw-card"
           style={{
-            borderLeft: '5px solid var(--accent, #7c7ceb)',
-            background: 'rgba(124, 124, 235, 0.08)',
-            margin: '16px 0',
-            padding: '14px 18px',
+            background: 'rgba(46, 125, 50, 0.08)',
+            border: '1px solid rgba(46, 125, 50, 0.25)',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
           }}
         >
-          <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
-            🌱 Personalized Wellness Reflection:
+          <div style={{ fontSize: '0.88rem', color: '#1b5e20', fontWeight: 600 }}>
+            📍 Detected Location: <b>{detectedAddress}</b> • Showing professionals sorted by proximity ({filteredDoctors.length} found)
           </div>
-          <div className="aw-muted" style={{ fontSize: '0.92rem', marginTop: '4px', lineHeight: '1.5' }}>
-            It looks like you've recently experienced elevated stress levels ({stressScore}/10). Speaking with a licensed mental-health specialist or psychiatrist can provide supportive guidance, medical evaluation, and personalized coping strategies.
-          </div>
+          <button
+            type="button"
+            onClick={handleClearLocation}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#d63031',
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              textDecoration: 'underline',
+            }}
+          >
+            Clear Location
+          </button>
         </div>
       )}
 
-      {/* Location Detection & Filter Section */}
-      <div className="aw-card" style={{ margin: '18px 0', padding: '18px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {locationError && (
+        <div
+          style={{
+            background: '#fff9db',
+            border: '1px solid #ffe066',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+            fontSize: '0.85rem',
+            color: '#856404',
+          }}
+        >
+          ⚠️ {locationError}
+        </div>
+      )}
 
-          {/* Search bar + Geolocation Button + View Mode Toggle */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: '1 1 300px' }}>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="🔎 Search by psychiatrist, hospital, city, or specialization (e.g. Depression, CBT, NIMHANS)..."
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--line)' }}
-              />
-            </div>
-
-            {/* Native Browser Geolocation Button */}
-            <button
-              className="btn-primary"
-              onClick={handleFindNearMe}
-              disabled={locationLoading}
+      {/* 4. Coverage Region and Professional Category filters */}
+      <div className="aw-card" style={{ marginBottom: '20px', padding: '16px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '16px',
+            alignItems: 'end',
+          }}
+        >
+          {/* A. Coverage Region */}
+          <div>
+            <label
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 16px',
-                fontSize: '0.88rem',
-                whiteSpace: 'nowrap',
+                display: 'block',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                color: 'var(--ink)',
+                marginBottom: '6px',
               }}
-              title="Detect your current location to find nearby mental health professionals"
             >
-              {locationLoading ? '⏳ Detecting Location...' : '📍 Find Professionals Near Me'}
-            </button>
-
-            {/* View Mode Toggle */}
-            <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--line)' }}>
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                style={{
-                  padding: '8px 14px',
-                  fontSize: '0.85rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: viewMode === 'list' ? 'var(--accent, #7c7ceb)' : 'var(--card-bg, #ffffff)',
-                  color: viewMode === 'list' ? '#ffffff' : 'var(--ink)',
-                  fontWeight: 600,
-                }}
-              >
-                📋 Card View
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('map')}
-                style={{
-                  padding: '8px 14px',
-                  fontSize: '0.85rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: viewMode === 'map' ? 'var(--accent, #7c7ceb)' : 'var(--card-bg, #ffffff)',
-                  color: viewMode === 'map' ? '#ffffff' : 'var(--ink)',
-                  fontWeight: 600,
-                }}
-              >
-                🗺️ Map View
-              </button>
-            </div>
+              📍 Coverage Region
+            </label>
+            <select
+              value={regionFilter}
+              onChange={(e) => setRegionFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                fontSize: '0.88rem',
+                borderRadius: '8px',
+                border: '1px solid var(--line)',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--ink)',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {REGION_OPTIONS.map((reg) => (
+                <option key={reg} value={reg}>
+                  {reg}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Location Feedback Status Banner */}
-          {detectedAddress && (
-            <div
-              style={{
-                background: 'rgba(46, 125, 50, 0.08)',
-                border: '1px solid rgba(46, 125, 50, 0.25)',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '8px',
-              }}
-            >
-              <div style={{ fontSize: '0.88rem', color: '#1b5e20', fontWeight: 600 }}>
-                📍 Detected Location: <b>{detectedAddress}</b> • Showing professionals sorted by proximity ({filteredDoctors.length} found)
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--ink)' }}>Radius:</span>
-                <select
-                  value={distanceRadius}
-                  onChange={(e) => setDistanceRadius(Number(e.target.value))}
-                  style={{ padding: '4px 8px', fontSize: '0.82rem', borderRadius: '6px', border: '1px solid var(--line)' }}
-                >
-                  {DISTANCE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+          {/* B. Professional Category */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: 'var(--ink)',
+                }}
+              >
+                🩺 Professional Category
+              </label>
+              {hasActiveFilters && (
                 <button
                   type="button"
-                  onClick={handleClearLocation}
+                  onClick={handleClearFilters}
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#d63031',
+                    color: 'var(--accent, #7c7ceb)',
                     fontSize: '0.82rem',
                     cursor: 'pointer',
                     fontWeight: 600,
                     textDecoration: 'underline',
+                    padding: 0,
                   }}
                 >
-                  Clear Location
+                  Clear Filters ✕
                 </button>
-              </div>
+              )}
             </div>
-          )}
-
-          {locationError && (
-            <div
-              style={{
-                background: '#fff9db',
-                border: '1px solid #ffe066',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                fontSize: '0.85rem',
-                color: '#856404',
-              }}
-            >
-              ⚠️ {locationError}
-            </div>
-          )}
-
-          {/* Region Tabs: All India | Tamil Nadu (16 Cities) | Other Major Cities (22 Cities) */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', marginRight: '4px' }}>
-              Region:
-            </span>
-            <button
-              className={regionFilter === 'All' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '5px 12px', fontSize: '0.82rem' }}
-              onClick={() => {
-                setRegionFilter('All');
-                setSelectedCity('All Cities');
-              }}
-            >
-              All India (38 Cities)
-            </button>
-            <button
-              className={regionFilter === 'TN' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '5px 12px', fontSize: '0.82rem' }}
-              onClick={() => {
-                setRegionFilter('TN');
-                setSelectedCity('All Tamil Nadu');
-              }}
-            >
-              🌴 Tamil Nadu (16 Cities)
-            </button>
-            <button
-              className={regionFilter === 'Other' ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '5px 12px', fontSize: '0.82rem' }}
-              onClick={() => {
-                setRegionFilter('Other');
-                setSelectedCity('All Other Cities');
-              }}
-            >
-              🏙️ Other Major Cities (22 Cities)
-            </button>
-          </div>
-
-          {/* City Selection Pills / Dropdown */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', marginRight: '4px' }}>
-              City Filter:
-            </span>
-            {regionFilter === 'TN' &&
-              TN_CITIES.map((city) => (
-                <button
-                  key={city}
-                  className={selectedCity === city ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                  onClick={() => setSelectedCity(city)}
-                >
-                  {city}
-                </button>
-              ))}
-
-            {regionFilter === 'Other' &&
-              OTHER_CITIES.slice(0, 10).map((city) => (
-                <button
-                  key={city}
-                  className={selectedCity === city ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                  onClick={() => setSelectedCity(city)}
-                >
-                  {city}
-                </button>
-              ))}
-
-            {regionFilter === 'All' && (
-              <>
-                {['All Cities', 'Chennai', 'Coimbatore', 'Salem', 'Madurai', 'Bengaluru', 'Delhi-NCR', 'Mumbai', 'Hyderabad', 'Kolkata'].map((city) => (
-                  <button
-                    key={city}
-                    className={selectedCity === city ? 'btn-primary' : 'btn-secondary'}
-                    style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                    onClick={() => setSelectedCity(city)}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </>
-            )}
-
-            {/* Quick dropdown for all 38 cities */}
             <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
               style={{
-                padding: '4px 8px',
-                fontSize: '0.82rem',
-                borderRadius: '6px',
+                width: '100%',
+                padding: '10px 14px',
+                fontSize: '0.88rem',
+                borderRadius: '8px',
                 border: '1px solid var(--line)',
-                marginLeft: '4px',
+                backgroundColor: 'var(--card-bg, #ffffff)',
+                color: 'var(--ink)',
+                cursor: 'pointer',
+                outline: 'none',
               }}
             >
-              <option value="All Cities">-- Browse All 38 Cities --</option>
-              <optgroup label="Tamil Nadu (16 Cities)">
-                {TN_CITIES.slice(1).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Other Indian Cities (22 Cities)">
-                {OTHER_CITIES.slice(1).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </optgroup>
+              {CATEGORY_OPTIONS.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
-
-          {/* Category Filter */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--ink)', marginRight: '4px' }}>
-              Specialization:
-            </span>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                className={selectedCategory === cat ? 'btn-primary' : 'btn-secondary'}
-                style={{ padding: '4px 10px', fontSize: '0.8rem' }}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
         </div>
       </div>
 
-      {/* Main Results View */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h3 style={{ margin: 0 }}>
-            {userLocation ? '📍 Nearby Mental Health Professionals' : 'Verified Mental Health Directory'} ({filteredDoctors.length})
-          </h3>
-          <span className="aw-muted" style={{ fontSize: '0.85rem' }}>
-            🇮🇳 Indian Medical Register &amp; NMC Verified
-          </span>
+      {/* 5. Available Professionals heading and result count */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <h3 style={{ margin: 0 }}>
+          Available Professionals ({filteredDoctors.length})
+        </h3>
+        <span className="aw-muted" style={{ fontSize: '0.85rem' }}>
+          🇮🇳 Indian Medical Register &amp; NMC Verified
+        </span>
+      </div>
+
+      {/* 6. Existing professional cards */}
+      {filteredDoctors.length === 0 ? (
+        <div className="aw-card" style={{ textAlign: 'center', padding: '36px 20px', marginBottom: '20px' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔍</div>
+          <div style={{ fontWeight: 600, color: 'var(--ink)' }}>No professionals matched your current filter</div>
+          <div className="aw-muted" style={{ fontSize: '0.9rem', marginTop: '6px' }}>
+            Try choosing "All India", selecting "All Categories", or clearing search keywords.
+          </div>
         </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+          {filteredDoctors.map((doc) => {
+            const isVerified = doc.verified !== false && doc.is_verified !== false;
+            const specs = Array.isArray(doc.specialization)
+              ? doc.specialization
+              : Array.isArray(doc.specialties)
+              ? doc.specialties
+              : [];
 
-        {/* MAP VIEW */}
-        {viewMode === 'map' && (
-          <div className="aw-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '20px' }}>
-            <div
-              ref={mapContainerRef}
-              style={{
-                width: '100%',
-                height: '480px',
-                borderRadius: '12px',
-                background: '#e5e3df',
-              }}
-            />
-            <div style={{ padding: '12px 16px', background: 'var(--card-bg, #ffffff)', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-              <div style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-                💡 Click any pin on the map to see clinic details, direct booking links, and turn-by-turn Google Maps directions.
-              </div>
-              <div style={{ display: 'flex', gap: '14px', fontSize: '0.82rem' }}>
-                <span>🩺 <b style={{ color: '#6669e5' }}>Purple Pin:</b> Verified Doctor / Hospital</span>
-                {userLocation && <span>📍 <b style={{ color: '#2e7d32' }}>Circle:</b> Your Location</span>}
-              </div>
-            </div>
-          </div>
-        )}
+            const directionsHref =
+              doc.directions_url ||
+              `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((doc.name || '') + ' ' + (doc.hospital || '') + ' ' + (doc.address || doc.city || ''))}`;
 
-        {/* CARD LIST VIEW */}
-        {filteredDoctors.length === 0 ? (
-          <div className="aw-card" style={{ textAlign: 'center', padding: '36px 20px' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔍</div>
-            <div style={{ fontWeight: 600, color: 'var(--ink)' }}>No professionals matched your current filter</div>
-            <div className="aw-muted" style={{ fontSize: '0.9rem', marginTop: '6px' }}>
-              Try expanding your distance radius, choosing "All Cities", or clearing search keywords.
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px' }}>
-            {filteredDoctors.map((doc) => {
-              const isVerified = doc.verified !== false && doc.is_verified !== false;
-              const specs = Array.isArray(doc.specialization)
-                ? doc.specialization
-                : Array.isArray(doc.specialties)
-                ? doc.specialties
-                : [];
-
-              const directionsHref =
-                doc.directions_url ||
-                `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((doc.name || '') + ' ' + (doc.hospital || '') + ' ' + (doc.address || doc.city || ''))}`;
-
-              return (
-                <div
-                  key={doc.id}
-                  className="aw-card"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    height: '100%',
-                    padding: '20px',
-                  }}
-                >
-                  <div>
-                    {/* Header: Name + Verification Badge */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--ink)' }}>
-                          {doc.category === 'Psychiatric Hospital' ? '🏥' : '👨‍⚕️'} {doc.name}
-                        </div>
-                        <div style={{ color: 'var(--accent, #7c7ceb)', fontWeight: 600, fontSize: '0.88rem', marginTop: '2px' }}>
-                          {doc.designation || doc.title || 'Mental Health Professional'}
-                        </div>
+            return (
+              <div
+                key={doc.id}
+                className="aw-card"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  height: '100%',
+                  padding: '20px',
+                }}
+              >
+                <div>
+                  {/* Header: Name + Verification Badge */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--ink)' }}>
+                        {doc.category === 'Psychiatric Hospital' || doc.category === 'Psychiatric Hospitals' ? '🏥' : '👨‍⚕️'} {doc.name}
                       </div>
-
-                      {/* Verification Status Badge */}
-                      {isVerified ? (
-                        <span
-                          style={{
-                            background: 'rgba(46, 125, 50, 0.12)',
-                            color: '#2e7d32',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '12px',
-                            whiteSpace: 'nowrap',
-                            border: '1px solid rgba(46, 125, 50, 0.25)',
-                          }}
-                          title={doc.verificationSource || 'Verified via Indian Medical Register / Medical Council'}
-                        >
-                          ✓ Verified
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            background: 'rgba(230, 126, 34, 0.12)',
-                            color: '#d35400',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            padding: '3px 8px',
-                            borderRadius: '12px',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          Verification Not Confirmed
-                        </span>
-                      )}
+                      <div style={{ color: 'var(--accent, #7c7ceb)', fontWeight: 600, fontSize: '0.88rem', marginTop: '2px' }}>
+                        {doc.designation || doc.title || 'Mental Health Professional'}
+                      </div>
                     </div>
 
-                    {/* Distance Badge if available */}
-                    {doc.distance_km !== undefined && doc.distance_km !== null && (
-                      <div
+                    {/* Verification Status Badge */}
+                    {isVerified ? (
+                      <span
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          marginTop: '8px',
-                          background: 'rgba(124, 124, 235, 0.12)',
-                          color: 'var(--accent-deep, #6669e5)',
-                          fontSize: '0.78rem',
+                          background: 'rgba(46, 125, 50, 0.12)',
+                          color: '#2e7d32',
+                          fontSize: '0.72rem',
                           fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          whiteSpace: 'nowrap',
+                          border: '1px solid rgba(46, 125, 50, 0.25)',
+                        }}
+                        title={doc.verificationSource || 'Verified via Indian Medical Register / Medical Council'}
+                      >
+                        ✓ Verified
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          background: 'rgba(230, 126, 34, 0.12)',
+                          color: '#d35400',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        📍 {doc.distance_km} km away from your location
+                        Verification Not Confirmed
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Distance Badge if available */}
+                  {doc.distance_km !== undefined && doc.distance_km !== null && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        marginTop: '8px',
+                        background: 'rgba(124, 124, 235, 0.12)',
+                        color: 'var(--accent-deep, #6669e5)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      📍 {doc.distance_km} km away from your location
+                    </div>
+                  )}
+
+                  {/* Hospital & Address */}
+                  <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--ink)' }}>
+                    <div>🏥 <b>{doc.hospital}</b></div>
+                    <div className="aw-muted" style={{ fontSize: '0.85rem', marginTop: '3px' }}>
+                      📍 {doc.address}
+                    </div>
+                    {doc.qualification && (
+                      <div style={{ marginTop: '5px', fontSize: '0.82rem', color: 'var(--muted)' }}>
+                        🎓 <b>Qualification:</b> {doc.qualification}
                       </div>
                     )}
-
-                    {/* Hospital & Address */}
-                    <div style={{ marginTop: '10px', fontSize: '0.9rem', color: 'var(--ink)' }}>
-                      <div>🏥 <b>{doc.hospital}</b></div>
-                      <div className="aw-muted" style={{ fontSize: '0.85rem', marginTop: '3px' }}>
-                        📍 {doc.address}
+                    {doc.experience && (
+                      <div style={{ marginTop: '4px', fontSize: '0.85rem' }}>
+                        ⏳ <b>Experience:</b> {doc.experience}
                       </div>
-                      {doc.qualification && (
-                        <div style={{ marginTop: '5px', fontSize: '0.82rem', color: 'var(--muted)' }}>
-                          🎓 <b>Qualification:</b> {doc.qualification}
-                        </div>
-                      )}
-                      {doc.experience && (
-                        <div style={{ marginTop: '4px', fontSize: '0.85rem' }}>
-                          ⏳ <b>Experience:</b> {doc.experience}
-                        </div>
-                      )}
-                      {doc.consultationType && (
-                        <div style={{ marginTop: '4px', fontSize: '0.85rem' }}>
-                          💻 <b>Consultation:</b> {doc.consultationType}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Specializations */}
-                    {specs.length > 0 && (
-                      <div style={{ marginTop: '12px' }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
-                          Areas of Expertise:
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                          {specs.map((spec, sIdx) => (
-                            <span
-                              key={sIdx}
-                              style={{
-                                background: 'var(--bg, #f5f6fa)',
-                                border: '1px solid rgba(124,124,235,0.2)',
-                                borderRadius: '6px',
-                                padding: '2px 8px',
-                                fontSize: '0.72rem',
-                                color: 'var(--ink)',
-                              }}
-                            >
-                              {spec}
-                            </span>
-                          ))}
-                        </div>
+                    )}
+                    {doc.consultationType && (
+                      <div style={{ marginTop: '4px', fontSize: '0.85rem' }}>
+                        💻 <b>Consultation:</b> {doc.consultationType}
                       </div>
                     )}
                   </div>
 
-                  {/* Actions: Book + Call + Directions */}
-                  <div
-                    style={{
-                      marginTop: '18px',
-                      paddingTop: '14px',
-                      borderTop: '1px solid rgba(124,124,235,0.15)',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                    }}
-                  >
-                    {/* Book Appointment */}
-                    {doc.bookingUrl && (
-                      <a
-                        href={doc.bookingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-primary"
-                        style={{
-                          flex: '1 1 120px',
-                          textAlign: 'center',
-                          textDecoration: 'none',
-                          padding: '8px 10px',
-                          fontSize: '0.84rem',
-                        }}
-                      >
-                        📅 Book
-                      </a>
-                    )}
+                  {/* Specializations */}
+                  {specs.length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
+                        Areas of Expertise:
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {specs.map((spec, sIdx) => (
+                          <span
+                            key={sIdx}
+                            style={{
+                              background: 'var(--bg, #f5f6fa)',
+                              border: '1px solid rgba(124,124,235,0.2)',
+                              borderRadius: '6px',
+                              padding: '2px 8px',
+                              fontSize: '0.72rem',
+                              color: 'var(--ink)',
+                            }}
+                          >
+                            {spec}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                    {/* Directions via Google Maps */}
+                {/* Actions: Book + Call + Directions */}
+                <div
+                  style={{
+                    marginTop: '18px',
+                    paddingTop: '14px',
+                    borderTop: '1px solid rgba(124,124,235,0.15)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                  }}
+                >
+                  {/* Book Appointment */}
+                  {doc.bookingUrl && (
                     <a
-                      href={directionsHref}
+                      href={doc.bookingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="btn-primary"
+                      style={{
+                        flex: '1 1 120px',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        padding: '8px 10px',
+                        fontSize: '0.84rem',
+                      }}
+                    >
+                      📅 Book
+                    </a>
+                  )}
+
+                  {/* Directions via Google Maps */}
+                  <a
+                    href={directionsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-secondary"
+                    style={{
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      padding: '8px 10px',
+                      fontSize: '0.84rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                    title="Open Google Maps turn-by-turn directions"
+                  >
+                    🗺️ Directions
+                  </a>
+
+                  {/* Call Clinic / Doctor */}
+                  {doc.phone && (
+                    <a
+                      href={`tel:${doc.phone.replace(/[^0-9+]/g, '')}`}
                       className="btn-secondary"
                       style={{
                         textAlign: 'center',
                         textDecoration: 'none',
                         padding: '8px 10px',
                         fontSize: '0.84rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
                       }}
-                      title="Open Google Maps turn-by-turn directions"
+                      title={`Call ${doc.hospital || doc.name}`}
                     >
-                      🗺️ Directions
+                      📞 Call
                     </a>
-
-                    {/* Call Clinic / Doctor */}
-                    {doc.phone && (
-                      <a
-                        href={`tel:${doc.phone.replace(/[^0-9+]/g, '')}`}
-                        className="btn-secondary"
-                        style={{
-                          textAlign: 'center',
-                          textDecoration: 'none',
-                          padding: '8px 10px',
-                          fontSize: '0.84rem',
-                        }}
-                        title={`Call ${doc.hospital || doc.name}`}
-                      >
-                        📞 Call
-                      </a>
-                    )}
-                  </div>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 7. Optional Map View */}
+      {viewMode === 'map' && (
+        <div className="aw-card" style={{ padding: '0', overflow: 'hidden', marginBottom: '20px' }}>
+          <div
+            ref={mapContainerRef}
+            style={{
+              width: '100%',
+              height: '480px',
+              borderRadius: '12px',
+              background: '#e5e3df',
+            }}
+          />
+          <div style={{ padding: '12px 16px', background: 'var(--card-bg, #ffffff)', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
+              💡 Click any pin on the map to see clinic details, direct booking links, and turn-by-turn Google Maps directions.
+            </div>
+            <div style={{ display: 'flex', gap: '14px', fontSize: '0.82rem' }}>
+              <span>🩺 <b style={{ color: '#6669e5' }}>Purple Pin:</b> Verified Doctor / Hospital</span>
+              {userLocation && <span>📍 <b style={{ color: '#2e7d32' }}>Circle:</b> Your Location</span>}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Directory Disclaimer */}
       <div className="aw-card" style={{ marginTop: '24px', padding: '16px', background: 'var(--card-bg, #ffffff)' }}>

@@ -17,7 +17,7 @@ export const TRANSLATIONS = {
     nav_logout: "🚪 Log Out",
     back_to_dashboard: "← Back to Dashboard",
     profile_title: "My Profile & Settings ⚙️",
-    profile_subtitle: "Manage your account details, visual themes, and language preferences.",
+    profile_subtitle: "Manage your account details and visual themes.",
     edit_display_name: "✏️ Edit Display Name",
     display_name_label: "Display Name",
     save_display_name: "Save Display Name",
@@ -140,20 +140,14 @@ export const TRANSLATIONS = {
 const LanguageContext = createContext(null);
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(() => localStorage.getItem('app_language') || 'English');
-
-  const changeLanguage = (lang) => {
-    setLanguage(lang);
-    localStorage.setItem('app_language', lang);
-  };
+  const language = 'English';
 
   const t = (key) => {
-    const langDict = TRANSLATIONS[language] || TRANSLATIONS['English'];
-    return langDict[key] || TRANSLATIONS['English'][key] || key;
+    return TRANSLATIONS['English']?.[key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: changeLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage: () => {}, t }}>
       {children}
     </LanguageContext.Provider>
   );

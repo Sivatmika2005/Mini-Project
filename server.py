@@ -18,6 +18,7 @@ load_dotenv()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, HTTPException, Header, Depends, status
+from utils.ownership import verify_owner
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -330,8 +331,15 @@ def create_journal_entry(req: JournalRequest, current_user: dict = Depends(get_c
 
 @app.delete("/api/journals/{entry_id}")
 def delete_journal(entry_id: int, current_user: dict = Depends(get_current_user)):
-    success = db.delete_journal_entry(entry_id, current_user["id"])
+    # Ensure the journal belongs to the authenticated user before deletion.
+    journal = db.get_journal_entry(entry_id)
+    if not journal:
+        # Return 404 to avoid leaking existence; treat as forbidden.
+        raise HTTPException(status_code=404, detail="Journal entry not found.")
+    verify_owner(journal.get("user_id"), current_user["id"])  # will raise 403 if mismatch
+    success = db.delete_journal_entry(entry_id, current_user["id"])  # deletion now safe
     return {"success": success}
+# (removed duplicate; ownership already enforced above)
 
 
 @app.post("/api/journals/summarize")
@@ -364,11 +372,25 @@ def create_conversation(req: ConversationCreateRequest, current_user: dict = Dep
 
 @app.put("/api/chat/conversations/{conv_id}")
 def update_conversation_title(conv_id: int, req: ConversationTitleRequest, current_user: dict = Depends(get_current_user)):
+    # Verify the conversation belongs to the user.
+    convs = db.get_conversations(current_user["id"])
+    if not any(c["id"] == conv_id for c in convs):
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    success = db.update_conversation_title(conv_id, current_user["id"], req.title)
+    return {"success": success}
+def update_conversation_title(conv_id: int, req: ConversationTitleRequest, current_user: dict = Depends(get_current_user)):
     success = db.update_conversation_title(conv_id, current_user["id"], req.title)
     return {"success": success}
 
 
 @app.delete("/api/chat/conversations/{conv_id}")
+def delete_conversation(conv_id: int, current_user: dict = Depends(get_current_user)):
+    # Verify ownership before deletion.
+    convs = db.get_conversations(current_user["id"])
+    if not any(c["id"] == conv_id for c in convs):
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    success = db.delete_conversation(conv_id, current_user["id"])
+    return {"success": success}
 def delete_conversation(conv_id: int, current_user: dict = Depends(get_current_user)):
     success = db.delete_conversation(conv_id, current_user["id"])
     return {"success": success}
@@ -381,6 +403,37 @@ def get_conversation_messages(conv_id: int, current_user: dict = Depends(get_cur
 
 
 @app.post("/api/chat/conversations/{conv_id}/messages")
+def send_chat_message(conv_id: int, req: ChatMessageRequest, current_user: dict = Depends(get_current_user)):
+    # Verify the conversation belongs to the authenticated user before accepting a message.
+    convs = db.get_conversations(current_user["id"])
+    if not any(c["id"] == conv_id for c in convs):
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    user_msg = req.message.strip()
+    if not user_msg:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    # 1. Fetch conversation history (now safe because ownership verified)
+    history = db.get_conversation_messages(conv_id, current_user["id"])
+    history_formatted = [{"role": m["role"], "content": m["content"]} for m in history]
+
+    # 2. Context from latest checkin & journals
+    latest_checkin = db.get_latest_checkin(current_user["id"])
+    stress_lvl = latest_checkin["stress_level"] if latest_checkin else None
+    mood_context = f"Most recent mood: {latest_checkin['mood']}, stress {latest_checkin['stress_level']}/10" if latest_checkin else ""
+
+    journals = db.get_journal_entries(current_user["id"])
+    journal_sum = journals[0].get("title") or journals[0].get("content", "")[:60] if journals else ""
+
+    # 3. Emotion classification on user message
+    try:
+        emo_data = predict_emotion(user_msg)
+        emotion = emo_data.get("emotion", "Neutral")
+    except Exception:
+        emotion = "Neutral"
+
+    # 4. Save user message
+    db.add_conversation_message(conv_id, current_user["id"], "user", user_msg)
+
 def send_chat_message(conv_id: int, req: ChatMessageRequest, current_user: dict = Depends(get_current_user)):
     user_msg = req.message.strip()
     if not user_msg:
